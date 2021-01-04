@@ -7,22 +7,29 @@ import json
 from datetime import datetime
 
 
+DIR_NAME = os.path.dirname(__file__)
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+
+def read_configs():
+  """Read configs.json."""
+  config_path = os.path.join(DIR_NAME, 'config.json')
+  with open(config_path) as f:
+    return json.load(f)
+
+
 class Sensor:
   def __init__(self):
-    dir_name = os.path.dirname(__file__)
-    config_path = os.path.join(dir_name, 'config.json')
-    with open(config_path) as f:
-      configs = json.load(f)
-
+    configs = read_configs()
     self.name: str = configs['name']
-    self.data_file: str = os.path.join(dir_name, configs['data_file'])
+    self.data_file: str = os.path.join(DIR_NAME, configs['data_file'])
     self.create_data_file()
     self.pin: int = configs['pin']
     self.update_interval: int = configs['update_interval']
     self.test_mode = self.name == 'test'
 
   def create_data_file(self):
-    """Create data file if none exists."""
+    """Create data file if none exists and write column headers."""
     if not os.path.exists(self.data_file):
       with open(self.data_file, 'w') as f:
         f.write('time,value\n')
@@ -35,7 +42,7 @@ class Sensor:
 
   def write_data(self):
     """Create a data file if none exists and append data to end."""
-    time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    time = datetime.now().strftime(DATE_FORMAT)
     value = self.read_sensor()
     row = time + ',' + str(value) + '\n'
     with open(self.data_file, 'a') as f:
