@@ -4,6 +4,7 @@ import random
 import asyncio
 import requests
 
+
 local_url = 'http://127.0.0.1:8000/'
 
 
