@@ -3,10 +3,14 @@ import setuptools
 
 with open('README.md') as f:
   long_description = f.read()
-description = 'Measure and share air quality data with Raspberry Pi.'
+description = 'Measure and share data from Raspberry Pi.'
 
 
-install_requires = []  # TODO: write this
+install_requires = [
+    'uvicorn',
+    'fastapi',
+    'pandas',
+]
 
 
 setuptools.setup(

@@ -2,12 +2,14 @@
 
 
 import os
-import time
 import csv
+import io
 from datetime import datetime
+from typing import Optional
 from dateutil import parser
+import socket
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse, FileResponse
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
 from airview.device.sensor import DIR_NAME, DATE_FORMAT, read_configs
@@ -37,7 +39,19 @@ def configure_logging(log_path: str):
   LOGGING_CONFIG['loggers']['uvicorn.access']['handlers'].append('access_file')
 
 
+def print_local_ip_address():
+  """See https://stackoverflow.com/questions/166506/"""
+
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  s.connect(('8.8.8.8', 80))
+  ip = s.getsockname()[0]
+  s.close()
+  print('Local IP address:', ip)
+
+
+print_local_ip_address()
 configs = read_configs()
+SENSOR_NAMES: list[str] = [s['name'] for s in configs['sensors']]
 LOG_PATH = os.path.join(DIR_NAME, configs['log_file'])
 configure_logging(LOG_PATH)
 DATA_PATH = os.path.join(DIR_NAME, configs['data_file'])
@@ -46,7 +60,7 @@ app = FastAPI()
 
 @app.get('/')
 async def root():
-  """Get most recent data point."""
+  """Get most recent row in data as dictionary."""
 
   # fast approach to get final line of a file
   # see https://stackoverflow.com/questions/46258499/
@@ -55,22 +69,21 @@ async def root():
     while f.read(1) != b'\n':
       f.seek(-2, os.SEEK_CUR)
     last_line = f.readline().decode()
-    t, v = last_line.split(',')
-    return {'time': t, 'value': int(v)}
+    values = last_line.split(',')
+    time = values.pop(0)
+    values = [int(v) for v in values]
+    return {'time': time} | dict(zip(SENSOR_NAMES, values))
 
 
-@app.get('/data/')
-async def data(date: str):
-  """Get all data not previously checked in."""
-  try:
-    dt = parser.parse(date)
-  except parser.ParserError as e:
-    raise HTTPException(status_code=400, detail=str(e)) from e
-  with open(DATA_PATH) as f:
-    pass
+@app.get('/data')
+def data():
+  """Return CSV containing all data."""
+  # cannot use with ... here
+  f = open(DATA_PATH, 'rb')
+  return StreamingResponse(f, media_type='text/csv')
 
 
-@app.get('/logs/', response_class=PlainTextResponse)
+@app.get('/logs', response_class=PlainTextResponse)
 async def logs():
   """Return the log data."""
   with open(LOG_PATH) as f:
