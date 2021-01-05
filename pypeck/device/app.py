@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
-from airview.device.configs import DATE_FORMAT, CONFIGS, LOG_PATH, DATA_PATH
+from pypeck.device.configs import DATE_FORMAT, CONFIGS, LOG_PATH, DATA_PATH
 
 
 def configure_logging(log_path: str):

@@ -1,27 +1,29 @@
-"""Install airview."""
+"""Install pypeck."""
 import setuptools
 
 with open('README.md') as f:
   long_description = f.read()
-description = 'Measure and share data from Raspberry Pi.'
+description = 'Display data from Raspberry Pi.'
 
 
 install_requires = [
     'uvicorn',
     'fastapi',
+    'dash',
+    'plotly',
+    'starlette',
     'pandas',
     'requests'
 ]
 
-
 setuptools.setup(
-    name='airview',
+    name='pypeck',
     author='Zeb Engberg',
     author_email='zebengberg@gmail.com',
     description=description,
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/zebengberg/airview',
+    url='https://github.com/zebengberg/pypeck',
     packages=setuptools.find_namespace_packages(),
     python_requires='>=3.9.0',
     install_requires=install_requires,

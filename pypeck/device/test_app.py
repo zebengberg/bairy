@@ -3,7 +3,7 @@
 from io import BytesIO
 import pandas as pd
 from fastapi.testclient import TestClient
-from airview.device.app import app
+from pypeck.device.app import app
 
 
 client = TestClient(app)

@@ -1,0 +1,9 @@
+pandas==1.2.0
+requests==2.25.1
+dash==1.18.1
+dash_html_components==1.1.1
+uvicorn==0.13.3
+plotly==4.14.1
+starlette==0.13.6
+dash_core_components==1.14.1
+fastapi==0.63.0

@@ -6,14 +6,14 @@ from dash import Dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
-from airview.hub.request import DATA_DIR, get_data_once, get_devices
+from pypeck.hub.request import DATA_DIR, get_data_once, get_devices
 
 from fastapi import FastAPI
 import uvicorn
 from starlette.middleware.wsgi import WSGIMiddleware
 
 
-USE_CACHED = True
+USE_CACHED = False
 if USE_CACHED:
   devices = get_devices()
 else:
@@ -34,8 +34,8 @@ df = devices[0]['df']
 fig = px.line(df, x='time', y=['air', 'temp'], title='Sensor Readings')
 
 app.layout = html.Div(children=[
-    html.H1(children='airview'),
-    html.Div(children='Displaying IoT data from Raspberry Pi.'),
+    html.H1(children='pypeck'),
+    html.Div(children='Display data from Raspberry Pi.'),
     dcc.Graph(id='plot', figure=fig)
 ])
 

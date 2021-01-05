@@ -5,7 +5,7 @@ import asyncio
 from random import randint
 from datetime import datetime
 from itertools import cycle
-from airview.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT
+from pypeck.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT
 
 
 class Device:

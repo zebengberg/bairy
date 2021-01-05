@@ -6,15 +6,15 @@ import json
 from typing import Any
 from datetime import datetime
 import requests
-from airview.device.configs import DATE_FORMAT
+from pypeck.device.configs import DATE_FORMAT
 
 
 with open(os.path.join(os.path.dirname(__file__), 'addresses.json')) as addr:
   IP_ADDRESSES: list[str] = json.load(addr)
 
-# creating ~/airview_data/hub
+# creating ~/pypeck_/hub
 DATA_DIR = os.path.expanduser('~')
-for dir_name in ['airview_data', 'hub']:
+for dir_name in ['pypeck_data', 'hub']:
   DATA_DIR = os.path.join(DATA_DIR, dir_name)
   if not os.path.exists(DATA_DIR):
     os.mkdir(DATA_DIR)
