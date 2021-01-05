@@ -21,8 +21,9 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/zebengberg/airview',
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_namespace_packages(),
     python_requires='>=3.9.0',
     install_requires=install_requires,
+    include_package_data=True,
     version='0.0.1',
     license='MIT')

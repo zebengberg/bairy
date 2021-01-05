@@ -1,5 +1,8 @@
 .vscode
 __pycache__
-config.json
+airview.egg-info
+
+# data and logs
 data.csv
 app.logs
+

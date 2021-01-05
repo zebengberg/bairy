@@ -2,14 +2,9 @@
 
 
 import os
-import csv
-import io
-from datetime import datetime
-from typing import Optional
-from dateutil import parser
 import socket
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse, StreamingResponse, FileResponse
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse, StreamingResponse
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
 from airview.device.sensor import DIR_NAME, DATE_FORMAT, read_configs
