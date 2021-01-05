@@ -41,3 +41,5 @@ if __name__ == '__main__':
     test_logs()
   except FileNotFoundError as e:
     raise FileNotFoundError('Create data before testing the endpoints!') from e
+
+  print('All tests pass.')

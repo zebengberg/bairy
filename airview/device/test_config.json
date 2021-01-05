@@ -2,8 +2,8 @@
   "name": "test",
   "location": "test",
   "sensors": [
-    { "name": "air", "pin": "-1" },
-    { "name": "temp", "pin": "-1" }
+    { "name": "air", "pin": -1 },
+    { "name": "temp", "pin": -1 }
   ],
   "update_interval": 1
 }

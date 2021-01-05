@@ -1,19 +1,23 @@
-"""Read sensor values and write data to disk."""
+"""Control IoT device by reading sensor values and writing data to disk."""
 
 import os
 import asyncio
-import random
+from random import randint
 from datetime import datetime
+from itertools import cycle
 from airview.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT
 
 
-class Sensor:
+class Device:
+  """A class to control IoT device."""
+
   def __init__(self):
     self.name: str = CONFIGS['name']
     self.sensors: list[dict[str, str]] = CONFIGS['sensors']
     self.create_data_file()
     self.update_interval: int = CONFIGS['update_interval']
     self.test_mode = self.name == 'test'
+    self.test_reading = [randint(0, 1023) for _ in self.sensors]
 
   def create_data_file(self):
     """Create data file if none exists and write column headers."""
@@ -26,8 +30,14 @@ class Sensor:
   def read_sensors(self):
     """Read sensor values."""
     if self.test_mode:
-      return [random.randint(0, 1023) for _ in self.sensors]
+      self.test_reading = [v + randint(-3, 3) for v in self.test_reading]
+      # clipping to 0, 1023 range
+      self.test_reading = [max(min(v, 1023), 0) for v in self.test_reading]
+      return self.test_reading
     raise NotImplementedError
+
+  def alarm(self):
+    """Sound an alarm if values exceed a threshold."""
 
   def write_data(self):
     """Create a data file if none exists and append data to end."""
@@ -39,13 +49,14 @@ class Sensor:
 
   async def run(self):
     """Call write_data indefinitely."""
-    while True:
+    for i in cycle(r'-\|/'):
       await asyncio.sleep(self.update_interval)
+      print('\r', i, sep='', end='', flush=True)
       self.write_data()
 
 
 if __name__ == '__main__':
-  s = Sensor()
+  d = Device()
   loop = asyncio.get_event_loop()
-  loop.create_task(s.run())
+  loop.create_task(d.run())
   loop.run_forever()
