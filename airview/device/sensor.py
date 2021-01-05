@@ -3,38 +3,24 @@
 import os
 import asyncio
 import random
-import json
 from datetime import datetime
-
-
-DIR_NAME = os.path.dirname(__file__)
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-CONFIG_FILE = 'test_config.json'
-
-
-def read_configs():
-  """Read configs.json."""
-  config_path = os.path.join(DIR_NAME, CONFIG_FILE)
-  with open(config_path) as f:
-    return json.load(f)
+from airview.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT
 
 
 class Sensor:
   def __init__(self):
-    configs = read_configs()
-    self.name: str = configs['name']
-    self.data_file: str = os.path.join(DIR_NAME, configs['data_file'])
-    self.sensors: list[dict[str, str]] = configs['sensors']
+    self.name: str = CONFIGS['name']
+    self.sensors: list[dict[str, str]] = CONFIGS['sensors']
     self.create_data_file()
-    self.update_interval: int = configs['update_interval']
+    self.update_interval: int = CONFIGS['update_interval']
     self.test_mode = self.name == 'test'
 
   def create_data_file(self):
     """Create data file if none exists and write column headers."""
     headers = [s['name'] for s in self.sensors]
     headers = 'time,' + ','.join(headers) + '\n'
-    if not os.path.exists(self.data_file):
-      with open(self.data_file, 'w') as f:
+    if not os.path.exists(DATA_PATH):
+      with open(DATA_PATH, 'w') as f:
         f.write(headers)
 
   def read_sensors(self):
@@ -48,7 +34,7 @@ class Sensor:
     time = datetime.now().strftime(DATE_FORMAT)
     values = self.read_sensors()
     row = time + ',' + ','.join(str(v) for v in values) + '\n'
-    with open(self.data_file, 'a') as f:
+    with open(DATA_PATH, 'a') as f:
       f.write(row)
 
   async def run(self):

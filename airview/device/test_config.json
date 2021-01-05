@@ -1,6 +1,4 @@
 {
-  "data_file": "data.csv",
-  "log_file": "app.logs",
   "name": "test",
   "location": "test",
   "sensors": [

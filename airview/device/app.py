@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
-from airview.device.sensor import DIR_NAME, DATE_FORMAT, read_configs
+from airview.device.configs import DATE_FORMAT, CONFIGS, LOG_PATH, DATA_PATH
 
 
 def configure_logging(log_path: str):
@@ -45,11 +45,8 @@ def print_local_ip_address():
 
 
 print_local_ip_address()
-configs = read_configs()
-SENSOR_NAMES: list[str] = [s['name'] for s in configs['sensors']]
-LOG_PATH = os.path.join(DIR_NAME, configs['log_file'])
+SENSOR_NAMES: list[str] = [s['name'] for s in CONFIGS['sensors']]
 configure_logging(LOG_PATH)
-DATA_PATH = os.path.join(DIR_NAME, configs['data_file'])
 app = FastAPI()
 
 
@@ -83,6 +80,12 @@ async def logs():
   """Return the log data."""
   with open(LOG_PATH) as f:
     return f.read()
+
+
+@app.get('/configs')
+async def configs():
+  """Return the device config."""
+  return CONFIGS
 
 
 if __name__ == '__main__':

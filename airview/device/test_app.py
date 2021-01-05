@@ -5,6 +5,7 @@ import pandas as pd
 from fastapi.testclient import TestClient
 from airview.device.app import app
 
+
 client = TestClient(app)
 
 
@@ -34,6 +35,9 @@ def test_logs():
 
 
 if __name__ == '__main__':
-  test_root()
-  test_data()
-  test_logs()
+  try:
+    test_root()
+    test_data()
+    test_logs()
+  except FileNotFoundError as e:
+    raise FileNotFoundError('Create data before testing the endpoints!') from e

@@ -10,6 +10,7 @@ install_requires = [
     'uvicorn',
     'fastapi',
     'pandas',
+    'requests'
 ]
 
 
