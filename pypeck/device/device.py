@@ -4,7 +4,6 @@ import os
 import asyncio
 from random import randint
 from datetime import datetime
-from itertools import cycle
 from pypeck.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT
 
 
@@ -49,9 +48,8 @@ class Device:
 
   async def run(self):
     """Call write_data indefinitely."""
-    for i in cycle(r'-\|/'):
+    while True:
       await asyncio.sleep(self.update_interval)
-      print('\r', i, sep='', end='', flush=True)
       self.write_data()
 
 
