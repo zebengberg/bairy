@@ -2,11 +2,20 @@
 
 
 import os
+from typing import Union
 import socket
+import pandas as pd
+import plotly.express as px
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
+from starlette.middleware.wsgi import WSGIMiddleware
+from dash import Dash
+from dash.dependencies import Input, Output
+import dash_core_components as dcc
+import dash_html_components as html
+
 from pypeck.device.configs import DATE_FORMAT, CONFIGS, LOG_PATH, DATA_PATH
 
 
@@ -41,13 +50,32 @@ def print_local_ip_address():
   s.connect(('8.8.8.8', 80))
   ip = s.getsockname()[0]
   s.close()
-  print('Local IP address:', ip)
+  print('#' * 65)
+  print('LOCAL IP ADDRESS:', ip)
+  print('#' * 65)
 
 
 print_local_ip_address()
-SENSOR_NAMES: list[str] = [s['name'] for s in CONFIGS['sensors']]
 configure_logging(LOG_PATH)
 app = FastAPI()
+
+
+css = 'https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/united/bootstrap.min.css'
+dash_app = Dash(requests_pathname_prefix='/plot/', external_stylesheets=[css])
+dash_app.layout = html.Div(children=[
+    html.H1(children='pypeck'),
+    html.Div(children='Display data from Raspberry Pi.'),
+    dcc.Graph(id='graph'),
+    html.Button(id='button', children='reload data')
+])
+
+
+@dash_app.callback(Output('graph', 'figure'), Input('button', 'n_clicks'))
+def update_plot(n_clicks):
+  """Update plotly plot when refresh button is clicked."""
+
+  df = pd.read_csv(DATA_PATH)
+  return px.line(df, x='time', y=['air', 'temp'], title='Sensor Readings')
 
 
 @app.get('/')
@@ -64,10 +92,15 @@ async def root():
     values = last_line.split(',')
     time = values.pop(0)
     values = [int(v) for v in values]
-    return {'time': time} | dict(zip(SENSOR_NAMES, values))
+
+    # pylint: disable=unsubscriptable-object
+    d: dict[str, Union[str, int]] = {'time': time}
+    sensor_names: list[str] = [s['name'] for s in CONFIGS['sensors']]
+    d |= dict(zip(sensor_names, values))
+    return d
 
 
-@app.get('/data')
+@ app.get('/data')
 def data():
   """Return CSV containing all data."""
   # cannot use with ... here
@@ -75,18 +108,19 @@ def data():
   return StreamingResponse(f, media_type='text/csv')
 
 
-@app.get('/logs', response_class=PlainTextResponse)
+@ app.get('/logs', response_class=PlainTextResponse)
 async def logs():
   """Return the log data."""
   with open(LOG_PATH) as f:
     return f.read()
 
 
-@app.get('/configs')
+@ app.get('/configs')
 async def configs():
   """Return the device config."""
   return CONFIGS
 
 
 if __name__ == '__main__':
+  app.mount('/plot', WSGIMiddleware(dash_app.server))
   uvicorn.run(app, host='0.0.0.0', port=8000)
