@@ -18,10 +18,11 @@ The easiest way to install the dependencies needed for this package is with Dock
 sudo usermod -aG docker $USER
 ```
 
-1. Clone this repository.
+1. Clone this repository and cd into it.
 
 ```sh
 git clone http://github.com/zebengberg/pypeck
+cd pypeck
 ```
 
 1. Create a `configs.json` file with the same format as the [test configs](#pypeck/device/test_config.json).
@@ -38,7 +39,7 @@ git clone http://github.com/zebengberg/pypeck
 }
 ```
 
-This file should be in the root directory of the project, at the same level as `Dockerfile`.
+This file should be located in the root directory of the project, at the same level as `Dockerfile`. This step can be skipped to run the device in `test_mode`.
 
 1. Build the docker image.
 
@@ -48,10 +49,10 @@ docker build -t pypeck-device .
 
 You will need to rebuild if you modify the `configs.json` file.
 
-1. Run the docker image to confirm it works.
+1. Run the docker image to confirm it works. The flag `-it` allows the process to be keyboard interrupted, and the flag `-p 8000:8000` allows the port forwarding between the Docker container and the host.
 
 ```sh
-docker run -t pypeck-device
+docker run -it -p 8000:8000 pypeck-device
 ```
 
 Point your web browser to `0.0.0.0:8000` to test the webapp. Other endpoints include:

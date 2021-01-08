@@ -1,8 +1,8 @@
 """Read and define configurations for device."""
 
+from __future__ import annotations
 import os
 import json
-from typing import Any
 
 
 # creating ~/pypeck_data/device/data
@@ -17,7 +17,7 @@ if not os.path.exists(DATA_DIR):
 def load_test_configs():
   """Load test configs shipped with module."""
   with open(os.path.join(MODULE_DIR, 'test_configs.json')) as f:
-    configs: dict[str, Any] = json.load(f)
+    configs: dict[str, str | int | list[str]] = json.load(f)
   return configs
 
 
@@ -36,7 +36,7 @@ def load_configs():
       return TEST_CONFIGS
 
   with open(path) as configs_file:
-    configs: dict[str, Any] = json.load(configs_file)
+    configs: dict[str, str | int | list[str]] = json.load(configs_file)
   return configs
 
 
@@ -58,3 +58,21 @@ verify_configs()
 LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
 DATA_PATH = os.path.join(DATA_DIR, 'data.csv')
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+
+def read_last_line():
+  """Read last line of data."""
+  # fast approach to get final line of a file
+  # see https://stackoverflow.com/questions/46258499/
+  with open(DATA_PATH, 'rb') as f:
+    f.seek(-2, os.SEEK_END)
+    while f.read(1) != b'\n':
+      f.seek(-2, os.SEEK_CUR)
+    return f.readline().decode()
+
+
+def read_headers():
+  """Read first line of data."""
+  with open(DATA_PATH) as f:
+    headers = f.readline()
+    return headers.rstrip()

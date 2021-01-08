@@ -3,3 +3,4 @@ __pycache__
 pypeck.egg-info
 data/
 configs.json
+addresses.txt

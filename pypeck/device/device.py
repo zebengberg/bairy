@@ -1,10 +1,11 @@
 """Control IoT device by reading sensor values and writing data to disk."""
 
+from __future__ import annotations
 import os
 import asyncio
-from random import randint
 from datetime import datetime
-from pypeck.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT
+from pypeck.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT, read_last_line
+from pypeck.device.sensors import read_air, read_random
 
 
 class Device:
@@ -12,28 +13,49 @@ class Device:
 
   def __init__(self):
     self.name: str = CONFIGS['name']
-    self.sensors: list[dict[str, str]] = CONFIGS['sensors']
-    self.create_data_file()
+    self.sensors: list[str] = CONFIGS['sensors']
     self.update_interval: int = CONFIGS['update_interval']
-    self.test_mode = self.name == 'test'
-    self.test_reading = [randint(0, 1023) for _ in self.sensors]
+    self.data: dict[str, int] | None = None
+    self.create_data_file()
 
   def create_data_file(self):
     """Create data file if none exists and write column headers."""
-    headers = [s['name'] for s in self.sensors]
-    headers = 'time,' + ','.join(headers) + '\n'
+
+    # taking an initial reading to get header values
+    headers = self.read_sensors().keys()
+
     if not os.path.exists(DATA_PATH):
+      headers = 'time,' + ','.join(headers) + '\n'
       with open(DATA_PATH, 'w') as f:
         f.write(headers)
 
+    else:  # getting the last known reading
+      with open(DATA_PATH) as f:
+        last_line = read_last_line()
+        values = last_line.split(',')[1:]
+        values = [int(v) for v in values]
+        self.data = dict(zip(headers, values))
+
   def read_sensors(self):
     """Read sensor values."""
-    if self.test_mode:
-      self.test_reading = [v + randint(-3, 3) for v in self.test_reading]
-      # clipping to 0, 1023 range
-      self.test_reading = [max(min(v, 1023), 0) for v in self.test_reading]
-      return self.test_reading
-    raise NotImplementedError
+    data: dict[str, int] = {}
+    for sensor in self.sensors:
+      if sensor == 'air':
+        reading = read_air()
+      elif sensor == 'random':
+        if self.data is not None:
+          prev_reading = self.data['random']
+        else:
+          prev_reading = None
+        reading = read_random(prev_reading)
+      else:
+        raise NotImplementedError
+
+      for k in reading:
+        if k in data:
+          raise KeyError('Duplicate key found!')
+      data.update(reading)
+    return data
 
   def alarm(self):
     """Sound an alarm if values exceed a threshold."""
@@ -41,8 +63,8 @@ class Device:
   def write_data(self):
     """Create a data file if none exists and append data to end."""
     time = datetime.now().strftime(DATE_FORMAT)
-    values = self.read_sensors()
-    row = time + ',' + ','.join(str(v) for v in values) + '\n'
+    self.data = self.read_sensors()
+    row = time + ',' + ','.join(str(v) for v in self.data.values()) + '\n'
     with open(DATA_PATH, 'a') as f:
       f.write(row)
 

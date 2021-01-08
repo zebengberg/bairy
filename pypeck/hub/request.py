@@ -9,6 +9,11 @@ import requests
 from pypeck.device.configs import DATE_FORMAT
 
 
+# creating ~/pypeck_data/hub/data
+MODULE_DIR = os.path.dirname(__file__)
+DATA_DIR = os.path.join(MODULE_DIR, 'data')
+PACKAGE_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
+
 with open(os.path.join(os.path.dirname(__file__), 'addresses.json')) as addr:
   IP_ADDRESSES: list[str] = json.load(addr)
 
@@ -55,7 +60,8 @@ def get_data(device: dict[str, Any]):
   """Request /data endpoint from device and save response to file."""
   url = 'http://' + device['ip_address'] + ':8000/data'
   r = requests.get(url)
-  path = os.path.join(DATA_DIR, (name := device['name']) + '.csv')
+  name = device['name']
+  path = os.path.join(DATA_DIR, name + '.csv')
 
   # make a backup copy of existing data
   backup_path = os.path.join(DATA_DIR, name + '_backup.csv')
