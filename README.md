@@ -10,19 +10,21 @@ This project is intended to run on both individual Raspberry Pi devices and a ce
 
 ### devices
 
-The easiest way to install the dependencies needed for this package is with Docker. Instructions are available for [Docker installation](#https://docs.docker.com/engine/install/debian/#install-using-the-convenience-script) on Raspbian.
+The following instruction work for Raspbian 10.
 
-1. Install docker. Add your non-root user to the Docker group to avoid constantly needing administrator privileges.
+1. Install the dependencies for the `numpy`-`pandas`-`scipy` suite.
 
 ```sh
-sudo usermod -aG docker $USER
+sudo apt update
+sudo apt install libatlas-base-dev
 ```
 
-1. Clone this repository and cd into it.
+1. Clone this repository and cd into it. Install with pip.
 
 ```sh
 git clone http://github.com/zebengberg/pypeck
 cd pypeck
+pip3 install .
 ```
 
 1. Create a `configs.json` file with the same format as the [test configs](#pypeck/device/test_config.json).
@@ -31,40 +33,20 @@ cd pypeck
 {
   "name": "test",
   "location": "test",
-  "sensors": [
-    { "name": "air", "pin": -1 },
-    { "name": "temp", "pin": -1 }
-  ],
+  "sensors": ["random"],
   "update_interval": 1
 }
 ```
 
-This file should be located in the root directory of the project, at the same level as `Dockerfile`. This step can be skipped to run the device in `test_mode`.
+This file should be located in the root directory of the project, at the same level as `setup.py`. This step can be skipped to run the device in `test_mode`.
 
-1. Build the docker image.
-
-```sh
-docker build -t pypeck-device .
-```
-
-You will need to rebuild if you modify the `configs.json` file.
-
-1. Run the docker image to confirm it works. The flag `-it` allows the process to be keyboard interrupted, and the flag `-p 8000:8000` allows the port forwarding between the Docker container and the host.
-
-```sh
-docker run -it -p 8000:8000 pypeck-device
-```
-
-Point your web browser to `0.0.0.0:8000` to test the webapp. Other endpoints include:
+1. Run the shell script with `$ ./device.sh`. Point your web browser in to `0.0.0.0:8000` to test the webapp. Other endpoints include:
 
 - `0.0.0.0:8000/data`
 - `0.0.0.0:8000/configs`
 - `0.0.0.0:8000/logs`
+- `0.0.0.0:8000/plot`
 
-1. Add the docker run command to `rc.local` to run on startup in headless mode. See [here](#https://www.raspberrypi.org/documentation/linux/usage/rc-local.md).
-
-```sh
-docker run -d pypeck-device
-```
+1. Add this shell script to the `rc.local` to run on startup in headless mode. See [here](#https://www.raspberrypi.org/documentation/linux/usage/rc-local.md).
 
 1. Power your Raspberry Pi in headless mode and try to access an endpoint from another machine on the local network. If the IP address from the previous step is `192.168.xxx.yyy`, point your browser to `192.168.xxx.yyy:8000`. Try each of the endpoints defined in the [app](#pypeck/device/app.py).

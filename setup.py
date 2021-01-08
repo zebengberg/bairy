@@ -11,7 +11,6 @@ install_requires = [
     'fastapi',
     'dash',
     'plotly',
-    'starlette',
     'pandas',
     'requests',
     'smbus'
