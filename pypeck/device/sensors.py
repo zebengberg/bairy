@@ -40,9 +40,10 @@ def read_air():
       assert data[0] == 0x42
       assert data[1] == 0x4d
       assert data[29] == 0
-      assert sum(data[:30]) == (data[30] << 8) + data[31]
     except AssertionError:
-      logging.warning('Error understanding I2C data read from air sensor.')
+      logging.warning('Read an internal error on air sensor.')
+    if sum(data[:30]) != (data[30] << 8) + data[31]:
+      logging.warning('Bad checksum from air sensor.')
 
     # standard particle reading
     data_dict['pm_1.0'] = (data[4] << 8) + data[5]

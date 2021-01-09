@@ -1,4 +1,4 @@
-"""Read and define configurations for device."""
+"""Read and define configurations and paths for device."""
 
 from __future__ import annotations
 import os
@@ -10,9 +10,12 @@ from typing import Any
 # creating data directory within module
 MODULE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(MODULE_DIR, 'data')
-PACKAGE_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
 CONFIGS_PATH = os.path.join(DATA_DIR, 'configs.json')
 TEST_CONFIGS_PATH = os.path.join(MODULE_DIR, 'test_configs.json')
+LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
+DATA_PATH = os.path.join(DATA_DIR, 'data.csv')
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
 
@@ -58,12 +61,6 @@ def load_configs():
   return configs
 
 
-LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
-DATA_PATH = os.path.join(DATA_DIR, 'data.csv')
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
-
-
 def read_headers():
   """Read first line of data."""
   with open(DATA_PATH) as f:
@@ -92,7 +89,7 @@ if __name__ == '__main__':
   elif arg == '--remove-data':
     os.remove(DATA_PATH)
     print('Removed stored data.csv')
-  elif arg == '--remove-log':
+  elif arg == '--remove-logs':
     os.remove(LOG_PATH)
     print('Removed stored app.logs')
 

@@ -64,7 +64,7 @@ configure_app_logging(LOG_PATH)
 app = FastAPI()
 
 
-def preprocess_df():
+def preprocess_df(resample_rule: str = '1T'):
   """Preprocess pandas DataFrame keeping n_rows rows."""
   df = pd.read_csv(DATA_PATH)
   df = df.set_index('time')
@@ -72,7 +72,7 @@ def preprocess_df():
     df = df[['pm_1.0', 'pm_2.5', 'pm_10']]
 
   df.index = pd.to_datetime(df.index)
-  df = df.resample('1T').mean()  # rolling average every minute
+  df = df.resample(resample_rule).mean()  # rolling average every minute
 
   # keeping only last 24 hours
   start = pd.Timestamp.now() - pd.Timedelta('1 day')
@@ -90,15 +90,26 @@ app.mount('/plot', WSGIMiddleware(dash_plot.server))
 dash_plot.layout = html.Div(children=[
     html.H1(children='pypeck'),
     html.Div(children='Display data from Raspberry Pi.'),
-    html.Button(id='button', children='reload data'),
+    html.Div(children=[
+        html.Button(id='reload', children='reload data'),
+        html.Button(id='smooth', children='smooth data'),
+    ]),
     dcc.Graph(id='graph')])
 
 
-@dash_plot.callback(Output('graph', 'figure'), Input('button', 'n_clicks'))
-def update_plot(n_clicks: int):
-  """Update dash_plot when refresh button is clicked."""
-  df = preprocess_df()
-  return px.line(df, x='time', y=df.columns, title='Sensor Readings')
+@dash_plot.callback([Output('graph', 'figure'), Output('smooth', 'children')],
+                    [Input('reload', 'n_clicks'), Input('smooth', 'n_clicks')])
+def update_plot(n_reloads: int | None, n_smooths: int | None):
+  """Update data on dash_plot when button is clicked."""
+  # hacky way to get toggle state of button -- check parity of n_clicks
+  print(n_reloads, n_smooths)
+  if n_smooths is not None and n_smooths % 2:
+    df = preprocess_df('10T')
+    text = 'unsmooth data'
+  else:
+    df = preprocess_df()
+    text = 'smooth data'
+  return px.line(df, x='time', y=df.columns, title='Sensor Readings'), text
 
 
 dash_table = Dash(requests_pathname_prefix='/table/',

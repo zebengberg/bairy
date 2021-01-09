@@ -6,31 +6,14 @@ import json
 from typing import Any
 from datetime import datetime
 import requests
-from pypeck.device.configs import DATE_FORMAT
-
-
-# creating ~/pypeck_data/hub/data
-MODULE_DIR = os.path.dirname(__file__)
-DATA_DIR = os.path.join(MODULE_DIR, 'data')
-PACKAGE_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
-
-with open(os.path.join(os.path.dirname(__file__), 'addresses.json')) as addr:
-  IP_ADDRESSES: list[str] = json.load(addr)
-
-# creating ~/pypeck_/hub
-DATA_DIR = os.path.expanduser('~')
-for dir_name in ['pypeck_data', 'hub']:
-  DATA_DIR = os.path.join(DATA_DIR, dir_name)
-  if not os.path.exists(DATA_DIR):
-    os.mkdir(DATA_DIR)
-
-UPDATE_INTERVAL = 60 * 60  # update every hour
+from pypeck.hub.configs import DATA_DIR, read_ips
 
 
 def get_devices():
   """Get, check, and save meta-data for devices."""
+  ips = read_ips()
   devices: list[dict[str, Any]] = []
-  for i in IP_ADDRESSES:
+  for i in ips:
     url = 'http://' + i + ':8000/configs'
     r = requests.get(url)
     configs: dict[str, Any] = r.json()
