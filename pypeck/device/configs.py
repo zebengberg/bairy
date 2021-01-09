@@ -2,63 +2,73 @@
 
 from __future__ import annotations
 import os
+import sys
 import json
+from typing import Any
 
 
-# creating ~/pypeck_data/device/data
+# creating data directory within module
 MODULE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(MODULE_DIR, 'data')
 PACKAGE_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
-
+CONFIGS_PATH = os.path.join(DATA_DIR, 'configs.json')
+TEST_CONFIGS_PATH = os.path.join(MODULE_DIR, 'test_configs.json')
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
 
 
+def verify_configs(configs: dict[str, Any]):
+  """Verify that the keys and types of configs are as expected."""
+  keys = ['name', 'location', 'sensors', 'update_interval']
+  types = [str, str, list, int]
+  for k, t in zip(keys, types):
+    if k not in configs:
+      raise KeyError(f'Expected key "{k}" in configs.')
+    if not isinstance(configs[k], t):
+      raise ValueError(f'Expected the "{k}" field to have type "{t}".')
+
+
 def load_test_configs():
   """Load test configs shipped with module."""
-  with open(os.path.join(MODULE_DIR, 'test_configs.json')) as f:
-    configs: dict[str, str | int | list[str]] = json.load(f)
+  with open(TEST_CONFIGS_PATH) as f:
+    configs: dict[str, Any] = json.load(f)
+    verify_configs(configs)
   return configs
 
 
-TEST_CONFIGS = load_test_configs()
+def set_configs(path: str):
+  """Verify and save device configs as json file within data directory."""
+  with open(path) as f:
+    configs: dict[str, Any] = json.load(f)
+  verify_configs(configs)
+  with open(CONFIGS_PATH, 'w') as f:
+    json.dump(configs, f, indent=4)
 
 
 def load_configs():
-  """Look for configs.json in several places with project."""
-  path = os.path.join(PACKAGE_DIR, 'configs.json')
-
-  if not os.path.exists(path):
-    path = os.path.join(PACKAGE_DIR, 'pypeck', 'configs.json')
-    if not os.path.exists(path):
-      path = os.path.join(MODULE_DIR, 'configs.json')
-      print('No configs.json found. Running device in test mode.')
-      return TEST_CONFIGS
-
-  with open(path) as configs_file:
-    configs: dict[str, str | int | list[str]] = json.load(configs_file)
+  """Look for stored configs.json file."""
+  if os.path.exists(CONFIGS_PATH):
+    with open(CONFIGS_PATH) as f:
+      configs: dict[str, Any] = json.load(f)
+      verify_configs(configs)
+  else:
+    print('No configs.json found. See the README for instructions.')
+    print('Loading app with test configs instead.')
+    configs = load_test_configs()
   return configs
-
-
-CONFIGS = load_configs()
-
-
-def verify_configs():
-  """Verify that the keys and types of passed configs agree with test configs."""
-  for k in TEST_CONFIGS:
-    if k not in CONFIGS:
-      raise KeyError(f'Excepted key {k} in configs.json.')
-    if not isinstance(CONFIGS[k], type(TEST_CONFIGS[k])):
-      raise TypeError(f'Wrong type encountered with key {k} in configsjson.')
-
-
-verify_configs()
 
 
 LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
 DATA_PATH = os.path.join(DATA_DIR, 'data.csv')
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+
+
+def read_headers():
+  """Read first line of data."""
+  with open(DATA_PATH) as f:
+    headers = f.readline()
+    return headers.rstrip()
 
 
 def read_last_line():
@@ -72,8 +82,20 @@ def read_last_line():
     return f.readline().decode()
 
 
-def read_headers():
-  """Read first line of data."""
-  with open(DATA_PATH) as f:
-    headers = f.readline()
-    return headers.rstrip()
+if __name__ == '__main__':
+  if len(sys.argv) < 2:
+    raise ValueError('Expected path/to/configs.json as additional argument!')
+  arg = sys.argv[1]
+  if arg == '--remove-configs':
+    os.remove(CONFIGS_PATH)
+    print('Removed stored configs.json')
+  elif arg == '--remove-data':
+    os.remove(DATA_PATH)
+    print('Removed stored data.csv')
+  elif arg == '--remove-log':
+    os.remove(LOG_PATH)
+    print('Removed stored app.logs')
+
+  else:
+    set_configs(arg)
+    print('Successfully verify and set configs.')

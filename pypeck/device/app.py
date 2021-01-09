@@ -16,8 +16,11 @@ from dash.dependencies import Input, Output
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-from pypeck.device.configs import DATE_FORMAT, CONFIGS, LOG_FORMAT, LOG_PATH, DATA_PATH, read_last_line, read_headers
+from pypeck.device.configs import DATE_FORMAT, LOG_FORMAT, LOG_PATH, DATA_PATH, load_configs
+from pypeck.device.configs import load_configs, read_last_line, read_headers
 from pypeck.device.device import run_device
+
+CONFIGS = load_configs()
 
 
 def print_local_ip_address():

@@ -1,1 +1,1 @@
-include pypeck/device/test_config.json
+include pypeck/device/test_configs.json

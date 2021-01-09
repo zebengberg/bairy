@@ -27,26 +27,43 @@ cd pypeck
 pip3 install .
 ```
 
-1. Create a `configs.json` file with the same format as the [test configs](#pypeck/device/test_config.json).
+1. Create a `configs.json` file with the same format as the [test configs](#pypeck/device/test_config.json). Below is an example.
 
 ```json
 {
-  "name": "test",
-  "location": "test",
-  "sensors": ["random"],
-  "update_interval": 1
+  "name": "razzy",
+  "location": "kitchen",
+  "sensors": ["air", "random"],
+  "update_interval": 5
 }
 ```
 
-This file should be located in the root directory of the project, at the same level as `setup.py`. This step can be skipped to run the device in `test_mode`.
+This file should be located in the root directory of the project, at the same level as `setup.py`. This step can be skipped to run the device with a random sensor.
 
-1. Run the shell script with `$ ./device.sh`. Point your web browser in to `0.0.0.0:8000` to test the webapp. Other endpoints include:
+1. Register your configurations with the `device` module.
+
+```sh
+python3 -m pypeck.device.configs path/to/configs.json
+```
+
+This module can also be run with `--remove-configs`, `--remove-data`, `--remove-logs` instead of the `path/to/configs.json` argument above.
+
+1. Run the main module to launch the web app and start collecting data.
+
+```sh
+python3 -m pypeck.device.app
+```
+
+Point your web browser in to `0.0.0.0:8000` to test the app. Other endpoints include:
 
 - `0.0.0.0:8000/data`
 - `0.0.0.0:8000/configs`
 - `0.0.0.0:8000/logs`
 - `0.0.0.0:8000/plot`
+- `0.0.0.0:8000/table`
 
-1. Add this shell script to the `rc.local` to run on startup in headless mode. See [here](#https://www.raspberrypi.org/documentation/linux/usage/rc-local.md).
+Take note of the IP address printed out to the terminal; you will need this for connection over your LAN.
 
-1. Power your Raspberry Pi in headless mode and try to access an endpoint from another machine on the local network. If the IP address from the previous step is `192.168.xxx.yyy`, point your browser to `192.168.xxx.yyy:8000`. Try each of the endpoints defined in the [app](#pypeck/device/app.py).
+1. Add the command `python3 -m pypeck.device.app` to the `rc.local` file in order to run the app on startup in headless mode. See [here](#https://www.raspberrypi.org/documentation/linux/usage/rc-local.md).
+
+1. Power your Raspberry Pi in headless mode and try to access an endpoint from another machine on the local network. If the IP address from the previous step is `192.168.xxx.yyy`, point your browser to `192.168.xxx.yyy:8000`. Try each of the endpoints listed above.

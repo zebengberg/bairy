@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import asyncio
 from datetime import datetime
-from pypeck.device.configs import DATA_PATH, CONFIGS, DATE_FORMAT, read_last_line
+from pypeck.device.configs import DATA_PATH, DATE_FORMAT, load_configs, read_last_line
 from pypeck.device.sensors import read_air, read_random
 
 
@@ -12,9 +12,10 @@ class Device:
   """A class to control IoT device."""
 
   def __init__(self):
-    self.name: str = CONFIGS['name']
-    self.sensors: list[str] = CONFIGS['sensors']
-    self.update_interval: int = CONFIGS['update_interval']
+    configs = load_configs()
+    self.name: str = configs['name']
+    self.sensors: list[str] = configs['sensors']
+    self.update_interval: int = configs['update_interval']
     self.data: dict[str, int] | None = None
     self.create_data_file()
 
