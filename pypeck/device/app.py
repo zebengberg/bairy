@@ -67,10 +67,10 @@ app = FastAPI()
 def preprocess_df():
   """Preprocess pandas DataFrame keeping n_rows rows."""
   df = pd.read_csv(DATA_PATH)
+  df = df.set_index('time')
   if 'air' in CONFIGS['sensors']:
     df = df[['pm_1.0', 'pm_2.5', 'pm_10']]
 
-  df = df.set_index('time')
   df.index = pd.to_datetime(df.index)
   df = df.resample('1T').mean()  # rolling average every minute
 
