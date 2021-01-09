@@ -1,2 +1,1 @@
 include pypeck/device/test_config.json
-include device.sh

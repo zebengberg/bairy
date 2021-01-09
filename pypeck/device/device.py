@@ -22,7 +22,10 @@ class Device:
     """Create data file if none exists and write column headers."""
 
     # taking an initial reading to get header values
-    headers = self.read_sensors().keys()
+    data = self.read_sensors()
+    if data is None:
+      raise ConnectionError('Unable to connect to sensor!')
+    headers = data.keys()
 
     if not os.path.exists(DATA_PATH):
       headers = 'time,' + ','.join(headers) + '\n'
@@ -51,6 +54,8 @@ class Device:
       else:
         raise NotImplementedError
 
+      if reading is None:
+        return None
       for k in reading:
         if k in data:
           raise KeyError('Duplicate key found!')
@@ -64,9 +69,10 @@ class Device:
     """Create a data file if none exists and append data to end."""
     time = datetime.now().strftime(DATE_FORMAT)
     self.data = self.read_sensors()
-    row = time + ',' + ','.join(str(v) for v in self.data.values()) + '\n'
-    with open(DATA_PATH, 'a') as f:
-      f.write(row)
+    if self.data is not None:
+      row = time + ',' + ','.join(str(v) for v in self.data.values()) + '\n'
+      with open(DATA_PATH, 'a') as f:
+        f.write(row)
 
   async def run(self):
     """Call write_data indefinitely."""
@@ -75,7 +81,8 @@ class Device:
       self.write_data()
 
 
-if __name__ == '__main__':
+def run_device():
+  """Create an instance of device and run foreever."""
   d = Device()
   loop = asyncio.get_event_loop()
   loop.create_task(d.run())

@@ -58,6 +58,7 @@ verify_configs()
 LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
 DATA_PATH = os.path.join(DATA_DIR, 'data.csv')
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
 
 def read_last_line():

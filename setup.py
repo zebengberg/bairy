@@ -13,7 +13,7 @@ install_requires = [
     'plotly',
     'pandas',
     'requests',
-    'smbus'
+    'smbus2'
 ]
 
 setuptools.setup(
