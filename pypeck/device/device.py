@@ -5,7 +5,7 @@ import os
 import asyncio
 from datetime import datetime
 from pypeck.device.configs import DATA_PATH, DATE_FORMAT, load_configs
-from pypeck.device.sensors import Sensor
+from pypeck.device.sensor import Sensor
 
 
 def read_sensors(sensors: list[Sensor]):

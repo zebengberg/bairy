@@ -28,6 +28,5 @@ setuptools.setup(
     packages=setuptools.find_namespace_packages(),
     python_requires='>=3.7.0',
     install_requires=install_requires,
-    include_package_data=True,
     version='0.0.1',
     license='MIT')
