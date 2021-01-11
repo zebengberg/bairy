@@ -1,6 +1,0 @@
-{
-  "name": "test",
-  "location": "test",
-  "sensors": ["random"],
-  "update_interval": 1
-}

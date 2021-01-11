@@ -2,6 +2,7 @@
 
 
 from __future__ import annotations
+import os
 from multiprocessing import Process
 import socket
 import pandas as pd
@@ -16,11 +17,11 @@ from dash.dependencies import Input, Output
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-from pypeck.device.configs import DATE_FORMAT, LOG_FORMAT, LOG_PATH, DATA_PATH, load_configs
+from pypeck.device.configs import DATE_FORMAT, LOG_FORMAT, LOG_PATH, DATA_PATH
 from pypeck.device.configs import load_configs, read_last_line, read_headers
 from pypeck.device.device import run_device
 
-CONFIGS = load_configs()
+DEVICES = load_configs()
 
 
 def print_local_ip_address():
@@ -68,8 +69,22 @@ def preprocess_df(resample_rule: str = '1T'):
   """Preprocess pandas DataFrame keeping n_rows rows."""
   df = pd.read_csv(DATA_PATH)
   df = df.set_index('time')
-  if 'air' in CONFIGS['sensors']:
-    df = df[['pm_1.0', 'pm_2.5', 'pm_10']]
+  cols_to_keep = []
+  sensor_types = [s.sensor_type for s in DEVICES.sensors]
+  if 'random' in sensor_types:
+    cols_to_keep.append('random')
+  if 'ir' in sensor_types:
+    cols_to_keep.append('ir_value')
+  if 'air' in sensor_types:
+    cols_to_keep += ['pm_2.5', 'pm_10']
+    # https://www.epa.gov/pm-pollution/final-decision-retain-national-ambient-air-quality-standards-particulate-matter-pm
+    if df['pm_10'].max() > 150:
+      df['pm_10_threshold'] = 150
+      cols_to_keep.append('pm_10_threshold')
+    if df['pm_2.5'].max() > 35:
+      df['pm_2.5_threshold'] = 150
+      cols_to_keep.append('pm_2.5_threshold')
+  df = df[cols_to_keep]
 
   df.index = pd.to_datetime(df.index)
   df = df.resample(resample_rule).mean()  # rolling average every minute
@@ -170,7 +185,13 @@ async def logs():
 @app.get('/configs')
 async def configs():
   """Return the device config."""
-  return CONFIGS
+  return DEVICES.dict()
+
+
+@app.get('/size')
+async def size():
+  """Return the size in bytes of the data file."""
+  return os.path.getsize(DATA_PATH)
 
 
 def run_app():

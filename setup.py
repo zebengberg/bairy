@@ -13,7 +13,8 @@ install_requires = [
     'plotly',
     'pandas',
     'requests',
-    'smbus2'
+    'smbus2',
+    'gpiozero'
 ]
 
 setuptools.setup(
