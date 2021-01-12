@@ -5,7 +5,7 @@ import os
 import sys
 import json
 from typing import Any
-from pypeck.device.validate import example_configs, random_configs, DeviceConfigs
+from bairy.device.validate import example_configs, random_configs, DeviceConfigs
 
 
 # creating data directory within module
@@ -67,7 +67,7 @@ if __name__ == '__main__':
   if len(sys.argv) < 2:
     print('Expected path/to/configs.json as additional argument!')
     print('Create a configs.json, and run with:')
-    print(' $ python3 -m pypeck.device.configs configs.json')
+    print(' $ python3 -m bairy.device.configs configs.json')
     print('Below is an example of a valid configs.json schema.')
     print(example_configs().json(indent=4))
 

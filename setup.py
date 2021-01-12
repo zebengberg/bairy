@@ -1,4 +1,4 @@
-"""Install pypeck."""
+"""Install bairy."""
 import setuptools
 
 with open('README.md') as f:
@@ -9,6 +9,7 @@ description = 'Display data from Raspberry Pi.'
 install_requires = [
     'uvicorn',
     'fastapi',
+    'pydantic',
     'dash',
     'plotly',
     'pandas',
@@ -18,13 +19,13 @@ install_requires = [
 ]
 
 setuptools.setup(
-    name='pypeck',
+    name='bairy',
     author='Zeb Engberg',
     author_email='zebengberg@gmail.com',
     description=description,
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/zebengberg/pypeck',
+    url='https://github.com/zebengberg/bairy',
     packages=setuptools.find_namespace_packages(),
     python_requires='>=3.7.0',
     install_requires=install_requires,

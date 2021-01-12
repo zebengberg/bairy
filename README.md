@@ -1,8 +1,8 @@
-# pypeck
+# bairy
 
 > Display data from Raspberry Pi.
 
-Suppose you have a Raspberry Pi IoT-style devices on a local network that measures and records data. `pypeck` provides a framework to share the data across the local network. If you have many devices each gathering data, `pypeck` allows data to be shared with a single centralized hub which can combine and share the result.
+Suppose you have a Raspberry Pi IoT-style devices on a local network that measures and records data. `bairy` provides a framework to share the data across the local network. If you have many devices each gathering data, `bairy` allows data to be shared with a single centralized hub which can combine and share the result.
 
 ## Install
 
@@ -22,12 +22,12 @@ sudo apt install libatlas-base-dev
 1. Clone this repository and cd into it. Install with pip.
 
 ```sh
-git clone http://github.com/zebengberg/pypeck
-cd pypeck
+git clone http://github.com/zebengberg/bairy
+cd bairy
 pip3 install .
 ```
 
-1. Create a `configs.json` file with the same format as the [test configs](#pypeck/device/test_config.json). Below is an example.
+1. Create a `configs.json` file with the same format as the [test configs](#bairy/device/test_config.json). Below is an example.
 
 ```json
 {
@@ -43,7 +43,7 @@ This file should be located in the root directory of the project, at the same le
 1. Register your configurations with the `device` module.
 
 ```sh
-python3 -m pypeck.device.configs path/to/configs.json
+python3 -m bairy.device.configs path/to/configs.json
 ```
 
 This module can also be run with `--remove-configs`, `--remove-data`, `--remove-logs` instead of the `path/to/configs.json` argument above.
@@ -51,7 +51,7 @@ This module can also be run with `--remove-configs`, `--remove-data`, `--remove-
 1. Run the main module to launch the web app and start collecting data.
 
 ```sh
-python3 -m pypeck.device.app
+python3 -m bairy.device.app
 ```
 
 Point your web browser in to `0.0.0.0:8000` to test the app. Other endpoints include:
@@ -67,8 +67,8 @@ Take note of the IP address printed out to the terminal; you will need this for 
 1. Add the command
 
 ```sh
-PYTHONPATH="path/to/pip/install/of/pypeck" \
-            python3 -m pypeck.device.app &
+PYTHONPATH="path/to/pip/install/of/bairy" \
+            python3 -m bairy.device.app &
 ```
 
 to the `rc.local` file in order to run the app on startup in headless mode. Because this script will be executed as root, the variable `PYTHONPATH` needs to include any directories in which pip installs packages. See [here](#https://www.raspberrypi.org/documentation/linux/usage/rc-local.md).
@@ -79,6 +79,6 @@ to the `rc.local` file in order to run the app on startup in headless mode. Beca
 
 Follow the first two steps as for devices. That is, install this project and its dependencies. In addition, you will also need to know the IP addresses of all devices you intend to connect to the hub. These IP addresses should be stored in a `.txt` file.
 
-1. Run `python -m pypeck.hub.configs path/to/addresses.txt`.
+1. Run `python -m bairy.hub.configs path/to/addresses.txt`.
 
 1.

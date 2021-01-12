@@ -6,7 +6,7 @@ import logging
 from pydantic import BaseModel
 import smbus2  # or just smbus
 from gpiozero import MotionSensor
-from pypeck.device.configs import DATE_FORMAT, LOG_PATH, LOG_FORMAT
+from bairy.device.configs import DATE_FORMAT, LOG_PATH, LOG_FORMAT
 
 
 def configure_sensor_logging():

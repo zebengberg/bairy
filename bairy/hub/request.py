@@ -6,7 +6,7 @@ import json
 from typing import Any
 from datetime import datetime
 import requests
-from pypeck.hub.configs import DATA_DIR, read_ips
+from bairy.hub.configs import DATA_DIR, read_ips
 
 
 def get_devices():

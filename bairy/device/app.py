@@ -5,18 +5,15 @@ from __future__ import annotations
 import os
 from multiprocessing import Process
 import socket
-import pandas as pd
-
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
 from starlette.middleware.wsgi import WSGIMiddleware
-
-from pypeck.device.configs import DATE_FORMAT, LOG_FORMAT, LOG_PATH, DATA_PATH
-from pypeck.device.configs import load_configs, read_last_line, read_headers
-from pypeck.device.device import run_device
-from pypeck.device.dash_app import dash_plot, dash_table
+from bairy.device.configs import DATE_FORMAT, LOG_FORMAT, LOG_PATH, DATA_PATH
+from bairy.device.configs import load_configs, read_last_line, read_headers
+from bairy.device.device import run_device
+from bairy.device.dash_app import dash_plot, dash_table
 
 DEVICES = load_configs()
 
@@ -102,8 +99,13 @@ async def configs():
 
 @app.get('/size')
 async def size():
-  """Return the size in bytes of the data file."""
-  return os.path.getsize(DATA_PATH)
+  """Return the size of the data file as a string."""
+  n = os.path.getsize(DATA_PATH)
+  for unit in ['', 'Ki', 'Mi', 'Gi']:
+    if n < 1024.0:
+      return f'{n:.2f} {unit}B'
+    n /= 1024.0
+  raise OverflowError
 
 
 def run_app():

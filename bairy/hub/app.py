@@ -7,7 +7,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly
 import plotly.express as px
-# from pypeck.hub.request import DATA_DIR, get_data_once, get_devices
+# from bairy.hub.request import DATA_DIR, get_data_once, get_devices
 
 from fastapi import FastAPI
 import uvicorn
@@ -21,7 +21,7 @@ def build_dash_app(px_fig: plotly.graph_objects.Figure):
                   external_stylesheets=[css])
 
   dash_app.layout = html.Div(children=[
-      html.H1(children='pypeck'),
+      html.H1(children='bairy'),
       html.Div(children='Display data from Raspberry Pi.'),
       dcc.Graph(id='plot', figure=px_fig)
   ])

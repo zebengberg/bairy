@@ -4,7 +4,7 @@ from io import BytesIO
 import json
 import pandas as pd
 from fastapi.testclient import TestClient
-from pypeck.device.app import app
+from bairy.device.app import app
 
 
 client = TestClient(app)

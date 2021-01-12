@@ -4,8 +4,8 @@ from __future__ import annotations
 import os
 import asyncio
 from datetime import datetime
-from pypeck.device.configs import DATA_PATH, DATE_FORMAT, load_configs
-from pypeck.device.sensor import Sensor
+from bairy.device.configs import DATA_PATH, DATE_FORMAT, load_configs
+from bairy.device.sensor import Sensor
 
 
 def read_sensors(sensors: list[Sensor]):
