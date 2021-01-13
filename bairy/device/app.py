@@ -2,7 +2,7 @@
 
 
 from __future__ import annotations
-import os
+
 from multiprocessing import Process
 import socket
 from fastapi import FastAPI
@@ -11,11 +11,12 @@ import uvicorn
 from uvicorn.config import LOGGING_CONFIG
 from starlette.middleware.wsgi import WSGIMiddleware
 from bairy.device.configs import DATE_FORMAT, LOG_FORMAT, LOG_PATH, DATA_PATH
-from bairy.device.configs import load_configs, read_last_line, read_headers
+from bairy.device.configs import load_configs
 from bairy.device.device import run_device
 from bairy.device.dash_app import dash_plot, dash_table
+from bairy.device.utils import get_data_size, read_last_line, read_headers
 
-DEVICES = load_configs()
+DEVICE = load_configs()
 
 
 def print_local_ip_address():
@@ -76,6 +77,12 @@ async def root():
   return d
 
 
+@app.get('/name')
+def name():
+  """Return device name."""
+  return DEVICE.name
+
+
 @app.get('/data')
 def data():
   """Return CSV containing all data."""
@@ -94,18 +101,12 @@ async def logs():
 @app.get('/configs')
 async def configs():
   """Return the device config."""
-  return DEVICES.dict()
+  return DEVICE.dict()
 
 
 @app.get('/size')
 async def size():
-  """Return the size of the data file as a string."""
-  n = os.path.getsize(DATA_PATH)
-  for unit in ['', 'Ki', 'Mi', 'Gi']:
-    if n < 1024.0:
-      return f'{n:.2f} {unit}B'
-    n /= 1024.0
-  raise OverflowError
+  return get_data_size()
 
 
 def run_app():

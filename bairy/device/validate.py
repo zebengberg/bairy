@@ -2,7 +2,8 @@
 d -> Device(**d.dict()) is an involution."""
 
 
-from typing import List, Union  # cannot use __future__ annotations with pydantic
+# cannot use __future__ annotations with pydantic
+from typing import List, Union, Dict
 from pydantic import BaseModel, validator
 
 
@@ -40,6 +41,7 @@ class DeviceConfigs(BaseModel):
   name: str
   location: str
   sensors: List[Union[AirSensorConfigs, IRSensorConfigs, RandomSensorConfigs]]
+  plot_axes: Dict[str, List[str]]
   update_interval: int
 
 
@@ -50,7 +52,8 @@ def random_configs():
       name='random sensor',
       location='table',
       sensors=[s],
-      update_interval=3)
+      plot_axes={'random value': ['random']},
+      update_interval=5)
   assert d == DeviceConfigs(**d.dict())
   return d
 
@@ -63,6 +66,8 @@ def example_configs():
       name='razzy',
       location='table',
       sensors=[s1, s2],
+      plot_axes={'micrograms / cubic meter': ['pm_2.5', 'pm_10'],
+                 'on-off': ['ir_state']},
       update_interval=1)
   assert d == DeviceConfigs(**d.dict())
   return d

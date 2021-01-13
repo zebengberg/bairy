@@ -1,27 +1,50 @@
 """Read and define addresses and paths for the hub."""
 
-
+from __future__ import annotations
 import os
 import sys
 import glob
+import ipaddress
+import json
 
 
 # creating data directory within module
 MODULE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(MODULE_DIR, 'data')
-IP_PATH = os.path.join(DATA_DIR, 'ip_addresses.txt')
+BACKUP_DIR = os.path.join(DATA_DIR, 'backup')
+IP_PATH = os.path.join(DATA_DIR, 'ip_addresses.json')
 LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
-UPDATE_INTERVAL = 60 * 60  # update every hour
+RECACHE_INTERVAL = 60 * 60  # update every hour
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
+if not os.path.exists(BACKUP_DIR):
+  os.mkdir(BACKUP_DIR)
 
 
-def set_addresses(path: str):
-  pass
+def set_ips(path: str):
+  """Verify and save device IP addresses in data directory."""
+  with open(path) as f:
+    addresses = f.read().splitlines()
+  for a in addresses:
+    try:
+      ipaddress.ip_address(a)
+    except ValueError as e:
+      if a != 'self':
+        raise e
+  with open(IP_PATH, 'w') as f:
+    json.dump(addresses, f)
 
 
-def read_ips():
-  pass
+def load_ips() -> list[str]:
+  """Read IP addresses saved in data directory."""
+  if os.path.exists(IP_PATH):
+    with open(IP_PATH) as f:
+      return json.load(f)
+
+  else:
+    print('No cached IP addresses found. See the README for instructions.')
+    print('Loading app with self as both device and host.')
+  return ['self']
 
 
 if __name__ == '__main__':
@@ -30,15 +53,15 @@ if __name__ == '__main__':
   arg = sys.argv[1]
   if arg == '--remove-addresses':
     os.remove(IP_PATH)
-    print('Removed stored ip_addresses.txt')
+    print(f'Removed stored file at {IP_PATH}')
   elif arg == '--remove-data':
-    for f in glob.glob(DATA_DIR + '*.csv'):
-      os.remove(f)
+    for data_file in glob.glob(DATA_DIR + '*.csv'):
+      os.remove(data_file)
     print('Removed all stored data.')
   elif arg == '--remove-logs':
     os.remove(LOG_PATH)
-    print('Removed stored app.logs')
+    print(f'Removed stored file at {LOG_PATH}')
 
   else:
-    set_addresses(arg)
+    set_ips(arg)
     print('Successfully set IP addresses')

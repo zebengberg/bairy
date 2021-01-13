@@ -13,7 +13,7 @@ install_requires = [
     'dash',
     'plotly',
     'pandas',
-    'requests',
+    'aiohttp',
     'smbus2',
     'gpiozero'
 ]

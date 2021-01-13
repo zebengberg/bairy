@@ -1,13 +1,16 @@
 """Create dash plot and dash table as endpoints."""
 
+
 import pandas as pd
-import plotly.express as px
-from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 from dash import Dash
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.device.configs import DATA_PATH
+from bairy.device.configs import DATA_PATH, load_configs
+
+
+CONFIGS = load_configs()
 
 
 def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
@@ -15,8 +18,7 @@ def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
   df = pd.read_csv(DATA_PATH)
   df = df.set_index('time')
 
-  cols_to_keep = ['random', 'ir_state', 'pm_2.5', 'pm_10']
-  cols_to_keep = [col for col in cols_to_keep if col in df.columns]
+  cols_to_keep = [col for axis in CONFIGS.plot_axes.values() for col in axis]
   df = df[cols_to_keep]
   # thresholds: 150 for pm10, 35 for pm2.5
 
@@ -36,7 +38,7 @@ def resample_df(df):
   """Modify df by resampling to bound number of points."""
   rules = ['2S', '5S', '10S', '30S', '1T', '2T', '5T', '10T', '30T', '1H']
   for r in rules:
-    if len(df) < 1000:
+    if len(df) < 5000:
       return df
     df = df.resample(r).mean()
   return df
@@ -46,36 +48,45 @@ def create_fig(only_last_day: bool = False):
   """Create plotly figure using one or two y-axes."""
   df = preprocess_df(only_last_day=only_last_day)
 
-  if 'pm_2.5' in df.columns and 'ir_state' in df.columns:
-    fig = make_subplots(specs=[[{'secondary_y': True}]])
+  fig = go.Figure()
+  for i, (unit, cols) in enumerate(CONFIGS.plot_axes.items(), 1):
+    for col in cols:
+      fig.add_trace(go.Scatter(
+          x=df['time'],
+          y=df[col],
+          name=col,
+          yaxis='y' + str(i)))
 
-    fig1 = px.line(df, x='time', y=['pm_2.5', 'pm_10'])
-    fig2 = px.line(df, x='time', y=['ir_state'])
-    fig2.update_traces(yaxis='y2')
-    fig.add_traces(fig1.data + fig2.data)
+    yaxis_title = {'yaxis' + str(i): {'title': unit}}
+    fig.update_layout(**yaxis_title)
+  fig.update_layout(height=600)
 
-    # ensuring no duplicate colors
-    fig.for_each_trace(lambda t: t.update(line={'color': t.marker.color}))
-    fig.layout.xaxis.title = 'time'
-    fig.layout.yaxis.title = 'microgram / m^3'
-    fig.layout.yaxis2.title = 'ir state'
+  # if 'pm_2.5' in df.columns and 'ir_state' in df.columns:
+  #   fig = make_subplots(specs=[[{'secondary_y': True}]])
 
-    return fig
+  #   fig1 = px.line(df, x='time', y=['pm_2.5', 'pm_10'])
+  #   fig2 = px.line(df, x='time', y=['ir_state'])
+  #   fig2.update_traces(yaxis='y2')
+  #   fig.add_traces(fig1.data + fig2.data)
 
-  return px.line(df, x='time', y=df.columns)
+  #   # ensuring no duplicate colors
+  #   fig.for_each_trace(lambda t: t.update(line={'color': t.marker.color}))
+  #   fig.layout.xaxis.title = 'time'
+  #   fig.layout.yaxis.title = 'micrograms / cubic meter'
+  #   fig.layout.yaxis2.title = 'ir state'
+
+  return fig
 
 
 def serve_plot():
   """Dynamically serve dash_plot.layout."""
-  fig_all = create_fig(False)
-  fig_all.layout.height = 600
-  fig_all.layout.title = 'All data'
-  fig_all.layout.xaxis.rangeslider.visible = True
-
-  fig_day = create_fig(True)
-  fig_day.layout.height = 600
-  fig_all.layout.title = 'Last 24 hours'
+  fig_day = create_fig(only_last_day=True)
+  fig_day.layout.title = 'Data from last 24 hours'
   fig_day.layout.xaxis.rangeslider.visible = True
+
+  fig_all = create_fig(only_last_day=False)
+  fig_all.layout.title = 'All available data'
+  fig_all.layout.xaxis.rangeslider.visible = True
 
   return html.Div(children=[
       html.H1(children='bairy'),

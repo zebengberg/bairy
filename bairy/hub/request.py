@@ -1,69 +1,101 @@
 """Gather configuration and data from devices."""
 
+from __future__ import annotations
+
 import os
-import asyncio
-import json
-from typing import Any
 from datetime import datetime
-import requests
-from bairy.hub.configs import DATA_DIR, read_ips
+import asyncio
+import aiohttp
+from bairy.hub.configs import DATA_DIR, BACKUP_DIR, RECACHE_INTERVAL, load_ips
+from bairy.device.configs import load_configs, DATE_FORMAT
+from bairy.device.utils import get_data_size
 
 
-def get_devices():
-  """Get, check, and save meta-data for devices."""
-  ips = read_ips()
-  devices: list[dict[str, Any]] = []
-  for i in ips:
-    url = 'http://' + i + ':8000/configs'
-    r = requests.get(url)
-    configs: dict[str, Any] = r.json()
-    configs.update({'ip_address': i})
-    devices.append(configs)
-  check_devices(devices)
-  save_devices(devices)
-  return devices
+async def get_endpoint(ip_address: str, endpoint: str):
+  """Helper function to async request endpoint from ip_address."""
+  assert endpoint[0] != '/'
+  assert ip_address != 'self'
+  async with aiohttp.ClientSession() as session:
+    url = 'http://' + ip_address + ':8000/' + endpoint
+    async with session.get(url) as r:
+      return await r.json()
 
 
-def check_devices(devices: list[dict[str, Any]]):
-  """Check devices dictionary for repeated names."""
-  names = [d['name'] for d in devices]
-  if len(names) != len(set(names)):
-    raise ValueError(f'Repeated names found in devices:\n{names}')
+async def get_configs(ip_address: str):
+  """Get configs associated to ip_address."""
+  if ip_address == 'self':
+    return load_configs().dict()
+  return await get_endpoint(ip_address, 'configs')
 
 
-def save_devices(devices: list[dict[str, Any]]):
-  """Write device meta-data to file."""
-  path = os.path.join(DATA_DIR, 'devices.json')
-  if not os.path.exists(path):
-    with open(path, 'w') as f:
-      json.dump(devices, f)
+async def get_name(ip_address: str) -> str:
+  """Get name associated to ip_address."""
+  if ip_address == 'self':
+    return load_configs().name
+  return await get_endpoint(ip_address, 'name')
 
 
-def get_data(device: dict[str, Any]):
+async def get_size(ip_address: str) -> str:
+  """Get size of data on device with ip_address."""
+  if ip_address == 'self':
+    return get_data_size()
+  return await get_endpoint(ip_address, 'size')
+
+
+def validate_names():
+  """Check device names to guarantee no duplicates."""
+  ip_addresses = load_ips()
+  loop = asyncio.get_event_loop()
+  tasks = [get_name(ip_address) for ip_address in ip_addresses]
+  gathered = asyncio.gather(*tasks)
+  names = loop.run_until_complete(gathered)
+  if len(set(names)) < len(list(names)):
+    raise ValueError('Discovered repeated name within devices!')
+  print('Device names:', names)
+
+
+async def get_data(ip_address: str):
   """Request /data endpoint from device and save response to file."""
-  url = 'http://' + device['ip_address'] + ':8000/data'
-  r = requests.get(url)
-  name = device['name']
-  path = os.path.join(DATA_DIR, name + '.csv')
 
-  # make a backup copy of existing data
-  backup_path = os.path.join(DATA_DIR, name + '_backup.csv')
-  if os.path.exists(path):
-    os.rename(path, backup_path)
+  assert ip_address != 'self'
 
-  # write response
-  with open(path, 'wb') as f:
-    f.write(r.content)
+  try:
+    name = await get_name(ip_address)
+    url = 'http://' + ip_address + ':8000/data'
 
-  # remove backup copy and print message
-  size = count_rows(path)
-  if os.path.exists(backup_path):
-    if size < count_rows(backup_path):
-      raise ValueError('New data is missing some of previous data.')
-    os.remove(backup_path)
-  now = datetime.now().strftime(DATE_FORMAT)
-  print(f'Successfully saved data from {name} at {now}.')
-  print(f'The data file {name}.csv now has {size} rows.')
+    # make a backup copy of existing data
+    path = os.path.join(DATA_DIR, name + '.csv')
+    backup_path = os.path.join(DATA_DIR, 'backups', name + '.csv')
+    if os.path.exists(path):
+      os.rename(path, backup_path)
+
+    print('Requesting data from', ip_address)
+    await stream_request(url, path)
+
+    # remove backup copy and print message
+    size = count_rows(path)
+    if os.path.exists(backup_path):
+      if size < count_rows(backup_path):
+        raise ValueError('New data is missing some of previous data.')
+      os.remove(backup_path)
+    now = datetime.now().strftime(DATE_FORMAT)
+    print(f'Successfully saved data from {url} at {now}.')
+    print(f'The data file {name}.csv now has {size} rows.')
+
+  except ConnectionError:
+    print('Failed to connect to device')
+
+
+async def stream_request(url: str, save_path: str):
+  """Make stream request and save data with aiohttp."""
+  async with aiohttp.ClientSession() as session:
+    async with session.get(url) as r:
+      with open(save_path, 'wb') as f:
+        while True:
+          chunk = await r.content.read(1024)
+          if not chunk:
+            break
+          f.write(chunk)
 
 
 def count_rows(path: str):
@@ -72,24 +104,22 @@ def count_rows(path: str):
     return sum(1 for _ in f)
 
 
-async def get_data_indefinitely():
-  """Get data from devices every UPDATE_INTERVAL seconds."""
-  devices = get_devices()
+async def request_data_indefinitely(ip_address: str):
+  """Request data from each device indefinitely."""
+  assert ip_address != 'self'
   while True:
-    for d in devices:
-      get_data(d)
-    await asyncio.sleep(UPDATE_INTERVAL)
+    await get_data(ip_address)
+    await asyncio.sleep(RECACHE_INTERVAL)
 
 
-def get_data_once():
-  """Get data from devices once and return device dictionary."""
-  devices = get_devices()
-  for d in devices:
-    get_data(d)
-  return devices
+def run_loop():
+  loop = asyncio.get_event_loop()
+  for ip_address in load_ips():
+    if ip_address != 'self':
+      loop.create_task(request_data_indefinitely(ip_address))
+  loop.run_forever()
 
 
 if __name__ == '__main__':
-  loop = asyncio.get_event_loop()
-  loop.create_task(get_data_indefinitely())
-  loop.run_forever()
+  validate_names()
+  run_loop()
