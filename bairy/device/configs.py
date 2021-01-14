@@ -37,11 +37,9 @@ def load_configs():
       configs: dict[str, Any] = json.load(f)
     d = DeviceConfigs(**configs)
     assert d == DeviceConfigs(**configs)
+    return d
 
-  else:
-    print('No configs.json found. See the README for instructions.')
-    print('Loading app with random configs instead.')
-    d = random_configs()
+  d = random_configs()
   return d
 
 

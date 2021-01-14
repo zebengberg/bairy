@@ -90,4 +90,4 @@ class Sensor:
       r = self.prev_reading + random.randint(-3, 3)
       r = max(min(r, 255), 0)  # clipping
     self.prev_reading = r
-    return {'random': r}
+    return {self.header: r}

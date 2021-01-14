@@ -29,6 +29,7 @@ class IRSensorConfigs(BaseModel):
 
 class RandomSensorConfigs(BaseModel):
   sensor_type: str = 'random'
+  header: str
 
   @validator('sensor_type')
   def check_sensor_type(cls, value: str):
@@ -44,15 +45,22 @@ class DeviceConfigs(BaseModel):
   plot_axes: Dict[str, List[str]]
   update_interval: int
 
+  @validator('plot_axes')
+  def check_plot_axes(cls, value: Dict[str, List[str]]):
+    assert len(value) in [1, 2]  # can only handle 1 or 2 y-axes currently
+    return value
+
 
 def random_configs():
   """Return a device with a random sensor."""
-  s = RandomSensorConfigs(sensor_type='random')
+  s1 = RandomSensorConfigs(sensor_type='random', header='random1')
+  s2 = RandomSensorConfigs(sensor_type='random', header='random2')
+  s3 = RandomSensorConfigs(sensor_type='random', header='random3')
   d = DeviceConfigs(
       name='random sensor',
       location='table',
-      sensors=[s],
-      plot_axes={'random value': ['random']},
+      sensors=[s1, s2, s3],
+      plot_axes={'random reading': ['random1', 'random2', 'random3']},
       update_interval=5)
   assert d == DeviceConfigs(**d.dict())
   return d

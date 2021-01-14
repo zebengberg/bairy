@@ -42,17 +42,23 @@ def create_data_file(sensors: list[Sensor]):
       f.write(headers)
 
 
+def initialize_device():
+  """Helper function for run device."""
+  device = load_configs()
+  sensors = [Sensor(s) for s in device.sensors]
+  create_data_file(sensors)
+  return device, sensors
+
+
 def run_device():
   """Run device indefinitely."""
-  d = load_configs()
-  sensors = [Sensor(s) for s in d.sensors]
-  create_data_file(sensors)
+  device, sensors = initialize_device()
 
   async def run():
     while True:
-      await asyncio.sleep(d.update_interval)
       data = read_sensors(sensors)
       write_data(data)
+      await asyncio.sleep(device.update_interval)
 
   loop = asyncio.get_event_loop()
   loop.create_task(run())

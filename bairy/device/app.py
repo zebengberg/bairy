@@ -2,7 +2,6 @@
 
 
 from __future__ import annotations
-
 from multiprocessing import Process
 import socket
 from fastapi import FastAPI
@@ -15,8 +14,6 @@ from bairy.device.configs import load_configs
 from bairy.device.device import run_device
 from bairy.device.dash_app import dash_plot, dash_table
 from bairy.device.utils import get_data_size, read_last_line, read_headers
-
-DEVICE = load_configs()
 
 
 def print_local_ip_address():
@@ -80,7 +77,7 @@ async def root():
 @app.get('/name')
 def name():
   """Return device name."""
-  return DEVICE.name
+  return load_configs().name
 
 
 @app.get('/data')
@@ -101,7 +98,7 @@ async def logs():
 @app.get('/configs')
 async def configs():
   """Return the device config."""
-  return DEVICE.dict()
+  return load_configs().dict()
 
 
 @app.get('/size')

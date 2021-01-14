@@ -10,19 +10,17 @@ import dash_html_components as html
 from bairy.device.configs import DATA_PATH, load_configs
 
 
-CONFIGS = load_configs()
-
-
 def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
   """Preprocess pandas DataFrame."""
   df = pd.read_csv(DATA_PATH)
   df = df.set_index('time')
+  df.index = pd.to_datetime(df.index)
 
-  cols_to_keep = [col for axis in CONFIGS.plot_axes.values() for col in axis]
+  configs = load_configs()
+  cols_to_keep = [col for axis in configs.plot_axes.values() for col in axis]
   df = df[cols_to_keep]
   # thresholds: 150 for pm10, 35 for pm2.5
 
-  df.index = pd.to_datetime(df.index)
   if only_last_day:
     start = pd.Timestamp.now() - pd.Timedelta('1 day')
     df = df[df.index > start]
@@ -47,34 +45,32 @@ def resample_df(df):
 def create_fig(only_last_day: bool = False):
   """Create plotly figure using one or two y-axes."""
   df = preprocess_df(only_last_day=only_last_day)
-
   fig = go.Figure()
-  for i, (unit, cols) in enumerate(CONFIGS.plot_axes.items(), 1):
-    for col in cols:
+
+  units = list(load_configs().plot_axes.keys())
+  assert len(units) in [1, 2]
+
+  u = units[0]
+  for col in load_configs().plot_axes[u]:
+    fig.add_trace(go.Scatter(
+        x=df['time'],
+        y=df[col],
+        name=col,
+        yaxis='y'))
+    fig.update_layout(yaxis={'title': u, 'side': 'left'})
+
+  if len(units) == 2:
+    u = units[1]
+    for col in load_configs().plot_axes[u]:
       fig.add_trace(go.Scatter(
           x=df['time'],
           y=df[col],
           name=col,
-          yaxis='y' + str(i)))
+          yaxis='y2'))
+      fig.update_layout(
+          yaxis2={'title': u, 'side': 'right', 'overlaying': 'y'})
 
-    yaxis_title = {'yaxis' + str(i): {'title': unit}}
-    fig.update_layout(**yaxis_title)
-  fig.update_layout(height=600)
-
-  # if 'pm_2.5' in df.columns and 'ir_state' in df.columns:
-  #   fig = make_subplots(specs=[[{'secondary_y': True}]])
-
-  #   fig1 = px.line(df, x='time', y=['pm_2.5', 'pm_10'])
-  #   fig2 = px.line(df, x='time', y=['ir_state'])
-  #   fig2.update_traces(yaxis='y2')
-  #   fig.add_traces(fig1.data + fig2.data)
-
-  #   # ensuring no duplicate colors
-  #   fig.for_each_trace(lambda t: t.update(line={'color': t.marker.color}))
-  #   fig.layout.xaxis.title = 'time'
-  #   fig.layout.yaxis.title = 'micrograms / cubic meter'
-  #   fig.layout.yaxis2.title = 'ir state'
-
+  fig.update_layout(height=800)
   return fig
 
 
@@ -96,7 +92,8 @@ def serve_plot():
 
 
 css = 'https://codepen.io/chriddyp/pen/bWLwgP.css'
-dash_plot = Dash(requests_pathname_prefix='/plot/', external_stylesheets=[css])
+dash_plot = Dash(requests_pathname_prefix='/plot/',
+                 external_stylesheets=[css])
 # See https://dash.plotly.com/live-updates
 dash_plot.layout = serve_plot
 

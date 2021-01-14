@@ -65,7 +65,7 @@ async def get_data(ip_address: str):
 
     # make a backup copy of existing data
     path = os.path.join(DATA_DIR, name + '.csv')
-    backup_path = os.path.join(DATA_DIR, 'backups', name + '.csv')
+    backup_path = os.path.join(BACKUP_DIR, name + '.csv')
     if os.path.exists(path):
       os.rename(path, backup_path)
 
