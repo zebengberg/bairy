@@ -17,13 +17,14 @@ class AirSensorConfigs(BaseModel):
     return value
 
 
-class IRSensorConfigs(BaseModel):
-  sensor_type: str = 'ir'
+class DigitalSensorConfigs(BaseModel):
+  sensor_type: str = 'digital'
   bcm_pin: int
+  header: str
 
   @validator('sensor_type')
   def check_sensor_type(cls, value: str):
-    assert value == 'ir'
+    assert value == 'digital'
     return value
 
 
@@ -41,7 +42,9 @@ class DeviceConfigs(BaseModel):
   """A Class holding configuration fields of the device."""
   name: str
   location: str
-  sensors: List[Union[AirSensorConfigs, IRSensorConfigs, RandomSensorConfigs]]
+  sensors: List[Union[AirSensorConfigs,
+                      DigitalSensorConfigs,
+                      RandomSensorConfigs]]
   plot_axes: Dict[str, List[str]]
   update_interval: int
 
@@ -69,13 +72,14 @@ def random_configs():
 def example_configs():
   """Return an example of valid configs as json."""
   s1 = AirSensorConfigs(sensor_type='air', i2c_address=0x12)
-  s2 = IRSensorConfigs(sensor_type='ir', bcm_pin=17)
+  s2 = DigitalSensorConfigs(sensor_type='digital', bcm_pin=17, header='ir')
+  s3 = DigitalSensorConfigs(sensor_type='digital', bcm_pin=17, header='sound')
   d = DeviceConfigs(
       name='razzy',
       location='table',
-      sensors=[s1, s2],
+      sensors=[s1, s2, s3],
       plot_axes={'micrograms / cubic meter': ['pm_2.5', 'pm_10'],
-                 'on-off': ['ir_state']},
+                 'intensity': ['ir_state', 'sound_state']},
       update_interval=1)
   assert d == DeviceConfigs(**d.dict())
   return d

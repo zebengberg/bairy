@@ -5,7 +5,7 @@ import random
 import logging
 from pydantic import BaseModel
 import smbus2  # or just smbus
-from gpiozero import MotionSensor
+from gpiozero import DigitalInputDevice
 from bairy.device.configs import DATE_FORMAT, LOG_PATH, LOG_FORMAT
 
 
@@ -37,7 +37,7 @@ class Sensor:
     """Read sensor measurements and return dictionary of values."""
     read_dict = {'air': self.read_air,
                  'random': self.read_random,
-                 'ir': self.read_ir}
+                 'digital': self.read_digital}
     return read_dict[self.sensor_type]()
 
   def read_air(self):
@@ -76,11 +76,11 @@ class Sensor:
         data_dict[k] = (data[byte1] << 8) + data[byte2]
     return data_dict
 
-  def read_ir(self):
-    """Read value associated to IR sensor digital pin."""
-    m = MotionSensor(self.bcm_pin)
+  def read_digital(self):
+    """Read value associated to generic digital sensor."""
+    m = DigitalInputDevice(self.bcm_pin)
     v: int = m.value
-    return {'ir_state': v}
+    return {self.header: v}
 
   def read_random(self):
     """Create random data for testing device."""
