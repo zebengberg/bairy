@@ -1,6 +1,7 @@
 """Control IoT device by reading sensor values and writing data to disk."""
 
 from __future__ import annotations
+from bairy.device.validate import DeviceConfigs
 import os
 import asyncio
 from datetime import datetime
@@ -42,9 +43,10 @@ def create_data_file(sensors: list[Sensor]):
       f.write(headers)
 
 
-def initialize_device():
+def initialize_device(device: DeviceConfigs | None = None):
   """Helper function for run device."""
-  device = load_configs()
+  if device is None:
+    device = load_configs()
   sensors = [Sensor(s) for s in device.sensors]
   create_data_file(sensors)
   return device, sensors

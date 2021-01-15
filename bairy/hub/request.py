@@ -1,89 +1,76 @@
 """Gather configuration and data from devices."""
 
 from __future__ import annotations
-
+import logging
 import os
-from datetime import datetime
 import asyncio
 import aiohttp
-from bairy.hub.configs import DATA_DIR, BACKUP_DIR, RECACHE_INTERVAL, load_ips
-from bairy.device.configs import load_configs, DATE_FORMAT
-from bairy.device.utils import get_data_size
+from bairy.hub.configs import DATA_DIR, BACKUP_DIR, RECACHE_INTERVAL, load_ips, LOG_PATH
+from bairy import device
 
 
-async def get_endpoint(ip_address: str, endpoint: str):
-  """Helper function to async request endpoint from ip_address."""
-  assert endpoint[0] != '/'
-  assert ip_address != 'self'
+device.utils.configure_logging(LOG_PATH)
+
+
+async def get_status(ip_address: str):
+  """Get status of device associated to ip_address."""
+  if ip_address == 'self':
+    return device.app.status_json()
   async with aiohttp.ClientSession() as session:
-    url = 'http://' + ip_address + ':8000/' + endpoint
+    url = 'http://' + ip_address + ':8000/' + 'status.json'
     async with session.get(url) as r:
       return await r.json()
 
 
-async def get_configs(ip_address: str):
-  """Get configs associated to ip_address."""
-  if ip_address == 'self':
-    return load_configs().dict()
-  return await get_endpoint(ip_address, 'configs')
-
-
-async def get_name(ip_address: str) -> str:
-  """Get name associated to ip_address."""
-  if ip_address == 'self':
-    return load_configs().name
-  return await get_endpoint(ip_address, 'name')
-
-
-async def get_size(ip_address: str) -> str:
-  """Get size of data on device with ip_address."""
-  if ip_address == 'self':
-    return get_data_size()
-  return await get_endpoint(ip_address, 'size')
+def get_all_statuses():
+  """Get status of every device known to hub."""
+  ip_addresses = load_ips()
+  loop = asyncio.get_event_loop()
+  tasks = [get_status(ip_address) for ip_address in ip_addresses]
+  gathered = asyncio.gather(*tasks)
+  statuses = loop.run_until_complete(gathered)
+  return statuses
 
 
 def validate_names():
   """Check device names to guarantee no duplicates."""
-  ip_addresses = load_ips()
-  loop = asyncio.get_event_loop()
-  tasks = [get_name(ip_address) for ip_address in ip_addresses]
-  gathered = asyncio.gather(*tasks)
-  names = loop.run_until_complete(gathered)
+  statuses = get_all_statuses()
+  names = [s['device_configs']['name'] for s in statuses]
   if len(set(names)) < len(list(names)):
     raise ValueError('Discovered repeated name within devices!')
-  print('Device names:', names)
+  logging.info('Validated device names:', names)
 
 
 async def get_data(ip_address: str):
   """Request /data endpoint from device and save response to file."""
+  status = get_status(ip_address)
+  name = status['device_configs']['name']
+  data_path = os.path.join(DATA_DIR, name + '.csv')
 
-  assert ip_address != 'self'
+  if ip_address == 'self':  # making a symlink to data
+    os.symlink(device.configs.DATA_PATH, data_path)
 
   try:
-    name = await get_name(ip_address)
     url = 'http://' + ip_address + ':8000/data'
 
     # make a backup copy of existing data
-    path = os.path.join(DATA_DIR, name + '.csv')
     backup_path = os.path.join(BACKUP_DIR, name + '.csv')
-    if os.path.exists(path):
-      os.rename(path, backup_path)
+    if os.path.exists(data_path):
+      os.rename(data_path, backup_path)
 
     print('Requesting data from', ip_address)
-    await stream_request(url, path)
+    await stream_request(url, data_path)
 
-    # remove backup copy and print message
-    size = count_rows(path)
+    # comparing the number of rows of the new data with the old data
+    size = device.utils.count_rows(data_path)
     if os.path.exists(backup_path):
-      if size < count_rows(backup_path):
+      if size < device.utils.count_rows(backup_path):
         raise ValueError('New data is missing some of previous data.')
       os.remove(backup_path)
-    now = datetime.now().strftime(DATE_FORMAT)
-    print(f'Successfully saved data from {url} at {now}.')
-    print(f'The data file {name}.csv now has {size} rows.')
+    logging.info(f'Successfully saved data from {ip_address}')
 
-  except ConnectionError:
-    print('Failed to connect to device')
+  except aiohttp.ClientConnectionError:
+    logging.error(f'Failed to connect to {ip_address}.')
 
 
 async def stream_request(url: str, save_path: str):
@@ -106,8 +93,8 @@ async def request_data_indefinitely(ip_address: str):
     await asyncio.sleep(RECACHE_INTERVAL)
 
 
-def run_request():
-  """Run request indefinitely."""
+def run_requests():
+  """Run requests indefinitely."""
   loop = asyncio.get_event_loop()
   for ip_address in load_ips():
     if ip_address != 'self':

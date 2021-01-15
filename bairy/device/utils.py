@@ -4,14 +4,14 @@ from __future__ import annotations
 import logging
 import os
 import socket
-from bairy.device.configs import DATA_PATH, LOG_FORMAT, DATE_FORMAT, LOG_PATH
+from bairy.device.configs import DATA_PATH, LOG_FORMAT, DATE_FORMAT
 
 
-def configure_logging():
+def configure_logging(log_path: str):
   """Set up root logger to send logs to file and console."""
   root_logger = logging.getLogger()
   formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
-  file_handler = logging.FileHandler(LOG_PATH)
+  file_handler = logging.FileHandler(log_path)
   file_handler.setFormatter(formatter)
   root_logger.addHandler(file_handler)
 

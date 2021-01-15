@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 import os
-import logging
 import json
+from typing import Any
 from multiprocessing import Process
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse, RedirectResponse
-import uvicorn
-from uvicorn.config import LOGGING_CONFIG
 from fastapi.middleware.wsgi import WSGIMiddleware
+import uvicorn
 from bairy.device.device import run_device
 from bairy.device.dash_app import dash_plot, dash_table
 from bairy.device import utils, configs
@@ -19,25 +18,27 @@ from bairy.device import utils, configs
 def configure_app_logging(log_path: str):
   """Configure uvicorn default logging to save to file."""
 
+  LC: dict[Any, Any] = uvicorn.config.LOGGING_CONFIG
+
   # changing default formatting
-  LOGGING_CONFIG['formatters']['access']['fmt'] = configs.LOG_FORMAT
-  LOGGING_CONFIG['formatters']['access']['datefmt'] = configs.DATE_FORMAT
-  LOGGING_CONFIG['formatters']['default']['fmt'] = configs.LOG_FORMAT
-  LOGGING_CONFIG['formatters']['default']['datefmt'] = configs.DATE_FORMAT
+  LC['formatters']['access']['fmt'] = configs.LOG_FORMAT
+  LC['formatters']['access']['datefmt'] = configs.DATE_FORMAT
+  LC['formatters']['default']['fmt'] = configs.LOG_FORMAT
+  LC['formatters']['default']['datefmt'] = configs.DATE_FORMAT
 
   # adding FileHandler to LOGGING_CONFIG
-  LOGGING_CONFIG['handlers']['default_file'] = {
+  LC['handlers']['default_file'] = {
       'formatter': 'default',
       'class': 'logging.FileHandler',
       'filename': log_path}
-  LOGGING_CONFIG['handlers']['access_file'] = {
+  LC['handlers']['access_file'] = {
       'formatter': 'access',
       'class': 'logging.FileHandler',
       'filename': log_path}
 
   # telling loggers to use the additional handler
-  LOGGING_CONFIG['loggers']['uvicorn']['handlers'].append('default_file')
-  LOGGING_CONFIG['loggers']['uvicorn.access']['handlers'].append('access_file')
+  LC['loggers']['uvicorn']['handlers'].append('default_file')
+  LC['loggers']['uvicorn.access']['handlers'].append('access_file')
 
 
 utils.print_local_ip_address()
@@ -64,7 +65,7 @@ def data():
 @app.get('/logs', response_class=PlainTextResponse)
 async def logs():
   """Return app log as plain text."""
-  with open(utils.LOG_PATH) as f:
+  with open(configs.LOG_PATH) as f:
     return f.read()
 
 

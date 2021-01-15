@@ -7,9 +7,10 @@ from pydantic import BaseModel
 import smbus2  # or just smbus
 from gpiozero import DigitalInputDevice
 from bairy.device.utils import configure_logging
+from bairy.device.configs import LOG_PATH
 
 
-configure_logging()
+configure_logging(LOG_PATH)
 
 
 class Sensor:
@@ -69,6 +70,8 @@ class Sensor:
       m = DigitalInputDevice(self.bcm_pin)
       v: int | None = m.value
     except RuntimeError:
+      logging.warning(
+          'RuntimeError on digital sensor with header:', self.header)
       v = None
     return {self.header: v}
 

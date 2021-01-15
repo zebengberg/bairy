@@ -1,4 +1,4 @@
-"""Testing all app endpoints."""
+"""Test all device app endpoints."""
 
 import os
 from io import BytesIO
@@ -12,12 +12,12 @@ client = TestClient(app)
 
 
 def test_data_path_exists():
-  """Confirm that the device has run on this machine."""
+  """Confirm that the device has saved data."""
   assert os.path.exists(DATA_PATH)
 
 
 def test_all_endpoint_status():
-  """Test all endpoints through openapi.json json."""
+  """Test all endpoints status code through openapi.json json."""
   r = client.get('/openapi.json')
   assert r.status_code == 200
   for e in r.json()['paths'].keys():
@@ -66,3 +66,9 @@ def test_status():
   assert 'device_configs' in d
   assert 'latest_reading' in d
   assert 'time' in d['latest_reading']
+
+
+def test_fake_endpoint():
+  """Ensure a fake endpoint returns 404."""
+  r = client.get('/fake')
+  assert r.status_code == 404
