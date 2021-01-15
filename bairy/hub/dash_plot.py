@@ -25,12 +25,12 @@ def load_data():
   dfs = [df.drop('time', axis=1) for df in dfs]
   # TODO: give better name
   dfs = [df.rename(columns={'pm_2.5': i}) for i, df in enumerate(dfs)]
-  merged = pd.concat(dfs)
 
+  df = pd.concat(dfs)
   # start = pd.Timestamp.now() - pd.Timedelta('1 day')
   # df = df[df.index > start]
-  # df = resample_df(df)
-  return merged
+  df = resample_df(df)
+  return df
 
 
 def create_fig():

@@ -6,23 +6,10 @@ import logging
 from pydantic import BaseModel
 import smbus2  # or just smbus
 from gpiozero import DigitalInputDevice
-from bairy.device.configs import DATE_FORMAT, LOG_PATH, LOG_FORMAT
+from bairy.device.utils import configure_logging
 
 
-def configure_sensor_logging():
-  """Set up root logger to record sensoring reading errors."""
-  root_logger = logging.getLogger()
-  formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
-  file_handler = logging.FileHandler(LOG_PATH)
-  file_handler.setFormatter(formatter)
-  root_logger.addHandler(file_handler)
-
-  console_handler = logging.StreamHandler()
-  console_handler.setFormatter(formatter)
-  root_logger.addHandler(console_handler)
-
-
-configure_sensor_logging()
+configure_logging()
 
 
 class Sensor:
@@ -78,8 +65,11 @@ class Sensor:
 
   def read_digital(self):
     """Read value associated to generic digital sensor."""
-    m = DigitalInputDevice(self.bcm_pin)
-    v: int = m.value
+    try:
+      m = DigitalInputDevice(self.bcm_pin)
+      v: int | None = m.value
+    except RuntimeError:
+      v = None
     return {self.header: v}
 
   def read_random(self):

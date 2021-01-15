@@ -98,12 +98,6 @@ async def stream_request(url: str, save_path: str):
           f.write(chunk)
 
 
-def count_rows(path: str):
-  """Count number of rows in CSV at path."""
-  with open(path) as f:
-    return sum(1 for _ in f)
-
-
 async def request_data_indefinitely(ip_address: str):
   """Request data from each device indefinitely."""
   assert ip_address != 'self'
@@ -112,14 +106,10 @@ async def request_data_indefinitely(ip_address: str):
     await asyncio.sleep(RECACHE_INTERVAL)
 
 
-def run_loop():
+def run_request():
+  """Run request indefinitely."""
   loop = asyncio.get_event_loop()
   for ip_address in load_ips():
     if ip_address != 'self':
       loop.create_task(request_data_indefinitely(ip_address))
   loop.run_forever()
-
-
-if __name__ == '__main__':
-  validate_names()
-  run_loop()

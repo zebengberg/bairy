@@ -72,8 +72,10 @@ def random_configs():
 def example_configs():
   """Return an example of valid configs as json."""
   s1 = AirSensorConfigs(sensor_type='air', i2c_address=0x12)
-  s2 = DigitalSensorConfigs(sensor_type='digital', bcm_pin=17, header='ir')
-  s3 = DigitalSensorConfigs(sensor_type='digital', bcm_pin=17, header='sound')
+  s2 = DigitalSensorConfigs(sensor_type='digital',
+                            bcm_pin=17, header='ir_state')
+  s3 = DigitalSensorConfigs(sensor_type='digital',
+                            bcm_pin=27, header='sound_state')
   d = DeviceConfigs(
       name='razzy',
       location='table',

@@ -1,7 +1,23 @@
 """A module holding utility functions for device."""
 
+from __future__ import annotations
+import logging
 import os
-from bairy.device.configs import DATA_PATH
+import socket
+from bairy.device.configs import DATA_PATH, LOG_FORMAT, DATE_FORMAT, LOG_PATH
+
+
+def configure_logging():
+  """Set up root logger to send logs to file and console."""
+  root_logger = logging.getLogger()
+  formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
+  file_handler = logging.FileHandler(LOG_PATH)
+  file_handler.setFormatter(formatter)
+  root_logger.addHandler(file_handler)
+
+  console_handler = logging.StreamHandler()
+  console_handler.setFormatter(formatter)
+  root_logger.addHandler(console_handler)
 
 
 def read_headers():
@@ -22,6 +38,19 @@ def read_last_line():
     return f.readline().decode()
 
 
+def latest_data():
+  """Get last line of data as dictionary."""
+  last_line = read_last_line()
+  values = last_line.split(',')
+  time = values.pop(0)
+  values = [int(v) for v in values]
+
+  d: dict[str, str | int] = {'time': time}
+  headers = read_headers().split(',')[1:]
+  d.update(dict(zip(headers, values)))
+  return d
+
+
 def get_data_size():
   """Return the size of the data file as a string."""
   n = os.path.getsize(DATA_PATH)
@@ -30,3 +59,22 @@ def get_data_size():
       return f'{n:.2f} {unit}B'
     n /= 1024.0
   raise OverflowError
+
+
+def count_rows(path: str):
+  """Count number of rows in CSV at path."""
+  assert path[-4:] == '.csv'
+  with open(path) as f:
+    return sum(1 for _ in f)
+
+
+def print_local_ip_address():
+  """See https://stackoverflow.com/questions/166506/"""
+
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  s.connect(('8.8.8.8', 80))
+  ip = s.getsockname()[0]
+  s.close()
+  print('#' * 65)
+  print('LOCAL IP ADDRESS:', ip)
+  print('#' * 65)

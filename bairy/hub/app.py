@@ -1,13 +1,15 @@
 """FastAPI app to display device data."""
 
 import json
+from multiprocessing import Process
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 import uvicorn
 from starlette.middleware.wsgi import WSGIMiddleware
 from bairy.hub.configs import load_ips
-from bairy.hub.request import get_size, get_configs, get_name
+from bairy.hub.request import get_size, get_configs, get_name, run_request
 from bairy.hub.dash_plot import dash_plot
+from bairy.hub.request import validate_names
 
 
 app = FastAPI()
@@ -45,4 +47,7 @@ def run_app():
 
 
 if __name__ == '__main__':
-  run_app()
+  validate_names()
+  p = Process(target=run_app)
+  p.start()
+  run_request()
