@@ -2,83 +2,73 @@
 
 > Display data from Raspberry Pi.
 
-Suppose you have a Raspberry Pi IoT-style devices on a local network that measures and records data. `bairy` provides a framework to share the data across the local network. If you have many devices each gathering data, `bairy` allows data to be shared with a single centralized hub which can combine and share the result.
+Suppose you have a Raspberry Pi IoT-style devices on a local network that measures and records data. `bairy` provides a framework to share the data across the local network. If you have many devices each gathering data, `bairy` allows data to be shared through a single centralized hub which can combine and display results.
 
 ## Install
 
-This project can be run on both individual Raspberry Pi devices and a centralized hub (a machine that can function as a host).
-
-### devices
-
-The following instruction work for Raspbian running on a Raspberry Pi B+.
+This package requires at least Python 3.7. The following instruction work for Raspbian 10 running on a Raspberry Pi B+.
 
 1. Install the dependencies for the `numpy`-`pandas`-`scipy` suite.
 
-```sh
-sudo apt update
-sudo apt install libatlas-base-dev
-```
+   ```sh
+   sudo apt update
+   sudo apt install libatlas-base-dev
+   ```
 
-1. Clone this repository and cd into it. Install with pip.
+1. Install this package with `pip3 install bairy`. If `pip3` is not recognized, try `python3 -m pip install bairy`.
 
-```sh
-git clone http://github.com/zebengberg/bairy
-cd bairy
-pip3 install .
-```
+1. Try out `bairy` with random configurations.
 
-1. Create a `configs.json` file with the same format as the [test configs](#bairy/device/test_config.json). Below is an example.
+   ```sh
+   # initialize bairy with sensors that give random readings
+   bairy --set-random-configs
+   # run the app
+   bairy
+   ```
 
-```json
-{
-  "name": "razzy",
-  "location": "kitchen",
-  "sensors": ["air", "random"],
-  "update_interval": 5
-}
-```
+1. Point your browser to `0.0.0.0:8000/status`. Refreshing, you should see the random sensor readings change every second. Also try `0.0.0.0:8000\plot`.
 
-This file should be located in the root directory of the project, at the same level as `setup.py`. This step can be skipped to run the device with a random sensor.
+1. Going back to your terminal, press CTRL + C to stop `bairy`. Simply run `bairy` again to continue recording data.
 
-1. Register your configurations with the `device` module.
+1. To remove stored data and random configurations, run `bairy --remove all`.
 
-```sh
-python3 -m bairy.device.configs path/to/configs.json
-```
+## Details
 
-This module can also be run with `--remove-configs`, `--remove-data`, `--remove-logs` instead of the `path/to/configs.json` argument above.
+### Configuration
 
-1. Run the main module to launch the web app and start collecting data.
+Once your Raspberry Pi is equipped with sensors, `bairy` must be configured to be made aware of those sensors. Run `bairy --help` to view some of the configuration options. As an example, run `bairy --configs-template` to create a file named `template_configs.json` as a template. This file can be edited to include details about the sensors on the Raspberry Pi. After modifying the json file, add the configurations to `bairy` with `bairy --set-configs template_configs.json`.
 
-```sh
-python3 -m bairy.device.app
-```
+### App endpoints
 
-Point your web browser in to `0.0.0.0:8000` to test the app. Other endpoints include:
+When `bairy` is configured then run on a Raspberry Pi, several processes start. Through an asynchronous event loop, `bairy` reads the values of the sensors and writes them to a `data.csv` file. Concurrently, `bairy` serves a `FastAPI`-backed web app that the user can interactive with. This web app can be accessed on the Raspberry Pi itself through the address `127.0.0.1:8000` or `0.0.0.0:8000` or `localhost:8000`.
 
-- `0.0.0.0:8000/data`
-- `0.0.0.0:8000/configs`
-- `0.0.0.0:8000/logs`
-- `0.0.0.0:8000/plot`
-- `0.0.0.0:8000/table`
+The app includes various endpoints, described below. To navigate to the endpoint `/logs`, point your browser to `0.0.0.0:8000/logs`.
 
-Take note of the IP address printed out to the terminal; you will need this for connection over your LAN.
+- `/data` Returns a streaming response of the `data.csv` file.
+- `/logs` Displays the app logs as plaintext.
+- `/status` Displays a pretty-printed json showing active configurations and device status.
+- `/experimental` Can be used to update `bairy` and reboot the Raspberry Pi. See the [app source](#bairy/device/app.py).
+- `/table` Renders a Dash table showing recent data.
+- `/plot` Renders a Dash plot showing averaged data.
 
-1. Add the command
+### LAN access
 
-```sh
-PYTHONPATH="path/to/pip/install/of/bairy" \
-            python3 -m bairy.device.app &
-```
+The web app can be accessed on the LAN. When `bairy` is started in a command line, it will print its local IP address. This IP address might take the form `192.168.0.17`. To access the `bairy` web app on a different machine on the network, point your browser to `192.168.0.17:8000/status`. Here `/status` can be replaced with any of the endpoints above.
 
-to the `rc.local` file in order to run the app on startup in headless mode. Because this script will be executed as root, the variable `PYTHONPATH` needs to include any directories in which pip installs packages. See [here](#https://www.raspberrypi.org/documentation/linux/usage/rc-local.md).
+### Run on startup
 
-1. Power your Raspberry Pi in headless mode and try to access an endpoint from another machine on the local network. If the IP address from the previous step is `192.168.xxx.yyy`, point your browser to `192.168.xxx.yyy:8000`. Try each of the endpoints listed above.
+To enable bairy to run when the Raspberry Pi starts, follow the steps below. This is especially useful in _headless_ mode, that is, when the Raspberry Pi is not attached to a monitor. See the [official documentation](#https://www.raspberrypi.org/documentation/linux/usage/systemd.md) for working with `systemd` on Raspberry Pi.
 
-### hub
+1. Run `bairy -s` to create the file `bairy.service`.
 
-Follow the first two steps as for devices. That is, install this project and its dependencies. In addition, you will also need to know the IP addresses of all devices you intend to connect to the hub. These IP addresses should be stored in a `.txt` file.
+1. Copy the `bairy.service` file to the `systemd` directory.
 
-1. Run `python -m bairy.hub.configs path/to/addresses.txt`.
+   ```sh
+   sudo cp bairy.service /etc/systemd/system/bairy.service
+   ```
 
-1.
+1. Run `sudo systemctl enable bairy.service` to enable it to run on startup.
+
+## bairy hub
+
+## License

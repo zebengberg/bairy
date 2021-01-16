@@ -30,5 +30,5 @@ setuptools.setup(
     python_requires='>=3.7.0',
     install_requires=install_requires,
     entry_points={'console_scripts': ['bairy = bairy.__main__:main']},
-    version='0.0.1',
+    version='0.0.3',
     license='MIT')

@@ -97,12 +97,10 @@ def experimental(param: str):
   if param == 'update':
     command = [sys.executable, '-m', 'pip', 'install', '-U', 'bairy']
     try:
-      success = subprocess.check_call(command)
-      if success == 0:
-        return 'success'
-      return 'fail'
-    except subprocess.CalledProcessError:
-      return 'fail'
+      subprocess.check_call(command)
+      return 'success'
+    except subprocess.CalledProcessError as e:
+      return e
 
   else:
     return 'unknown param'
@@ -110,5 +108,4 @@ def experimental(param: str):
 
 def run_app():
   """Run app with uvicorn."""
-
   uvicorn.run(app, host='0.0.0.0', port=8000)

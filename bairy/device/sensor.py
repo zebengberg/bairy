@@ -21,6 +21,9 @@ class Sensor:
       setattr(self, k, v)
     self.prev_reading = prev_reading
 
+    if self.sensor_type == 'digital':
+      self.device = DigitalInputDevice(self.bcm_pin)
+
   def read(self) -> dict[str, int | None]:
     """Read sensor measurements and return dictionary of values."""
     read_dict = {'air': self.read_air,
@@ -67,11 +70,15 @@ class Sensor:
   def read_digital(self):
     """Read value associated to generic digital sensor."""
     try:
-      m = DigitalInputDevice(self.bcm_pin)
-      v: int | None = m.value
+      v: int | None = self.device.value
     except RuntimeError:
       logging.warning('RuntimeError on sensor with header: %s', self.header)
       v = None
+
+      # try closing then reopening
+      self.device.close()
+      self.device = DigitalInputDevice(self.bcm_pin)
+
     return {self.header: v}
 
   def read_random(self):

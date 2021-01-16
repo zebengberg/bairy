@@ -2,6 +2,7 @@ test:
 	pytest
 
 build:
+	rm -rf dist
 	python setup.py sdist bdist_wheel clean --all
 
 install:
