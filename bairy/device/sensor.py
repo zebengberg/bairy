@@ -70,8 +70,7 @@ class Sensor:
       m = DigitalInputDevice(self.bcm_pin)
       v: int | None = m.value
     except RuntimeError:
-      logging.warning(
-          'RuntimeError on digital sensor with header:', self.header)
+      logging.warning('RuntimeError on sensor with header: %s', self.header)
       v = None
     return {self.header: v}
 

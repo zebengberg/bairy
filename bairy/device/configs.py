@@ -8,16 +8,20 @@ from typing import Any
 from bairy.device.validate import example_configs, random_configs, DeviceConfigs
 
 
-# creating data directory within module
+# creating data directory
 MODULE_DIR = os.path.dirname(__file__)
-DATA_DIR = os.path.join(MODULE_DIR, 'data')
-CONFIGS_PATH = os.path.join(DATA_DIR, 'configs.json')
-LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
-DATA_PATH = os.path.join(DATA_DIR, 'data.csv')
+PACKAGE_DIR = os.path.dirname(MODULE_DIR)
+DATA_DIR = os.path.join(PACKAGE_DIR, 'data')
+DEVICE_DATA_DIR = os.path.join(DATA_DIR, 'device')
+CONFIGS_PATH = os.path.join(DEVICE_DATA_DIR, 'configs.json')
+LOG_PATH = os.path.join(DEVICE_DATA_DIR, 'app.logs')
+DATA_PATH = os.path.join(DEVICE_DATA_DIR, 'data.csv')
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
+if not os.path.exists(DEVICE_DATA_DIR):
+  os.mkdir(DEVICE_DATA_DIR)
 
 
 def set_configs(path: str):
@@ -30,6 +34,14 @@ def set_configs(path: str):
     json.dump(configs, f, indent=4)
 
 
+def set_random_configs():
+  """Save random configs as json file within data directory."""
+  d = random_configs()
+  assert d == DeviceConfigs(**d.dict())
+  with open(CONFIGS_PATH, 'w') as f:
+    json.dump(d.dict(), f, indent=4)
+
+
 def load_configs():
   """Look for stored configs.json file."""
   if os.path.exists(CONFIGS_PATH):
@@ -38,9 +50,8 @@ def load_configs():
     d = DeviceConfigs(**configs)
     assert d == DeviceConfigs(**configs)
     return d
-
-  d = random_configs()
-  return d
+  else:
+    raise FileNotFoundError('No configurations found! Run bairy --help')
 
 
 if __name__ == '__main__':

@@ -1,18 +1,17 @@
-"""Launch uvicorn server and process requests with FastAPI."""
+"""Process device requests with FastAPI."""
 
 
 from __future__ import annotations
 import os
 import json
+import subprocess
+import sys
 from typing import Any
-from multiprocessing import Process
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse, RedirectResponse
 from fastapi.middleware.wsgi import WSGIMiddleware
 import uvicorn
-from bairy.device.device import run_device
-from bairy.device.dash_app import dash_plot, dash_table
-from bairy.device import utils, configs
+from bairy.device import utils, configs, dash_app
 
 
 def configure_app_logging(log_path: str):
@@ -41,11 +40,10 @@ def configure_app_logging(log_path: str):
   LC['loggers']['uvicorn.access']['handlers'].append('access_file')
 
 
-utils.print_local_ip_address()
 configure_app_logging(configs.LOG_PATH)
 app = FastAPI()
-app.mount('/plot', WSGIMiddleware(dash_plot.server))
-app.mount('/table', WSGIMiddleware(dash_table.server))
+app.mount('/plot', WSGIMiddleware(dash_app.dash_plot.server))
+app.mount('/table', WSGIMiddleware(dash_app.dash_table.server))
 
 
 @app.get('/')
@@ -89,23 +87,28 @@ def status_json():
   return device_status
 
 
-@app.get('/experiment/{param}')
-def experiment(param: str):
+@app.get('/experimental/{param}')
+def experimental(param: str):
   """Run experimental param on device."""
   if param == 'reboot':
     os.system('sudo reboot')
-  elif param == 'update':
-    pass
+    return 'fail'  # if here, the reboot failed
+
+  if param == 'update':
+    command = [sys.executable, '-m', 'pip', 'install', '-U', 'bairy']
+    try:
+      success = subprocess.check_call(command)
+      if success == 0:
+        return 'success'
+      return 'fail'
+    except subprocess.CalledProcessError:
+      return 'fail'
+
   else:
     return 'unknown param'
 
 
 def run_app():
-  """Run app as separate process."""
+  """Run app with uvicorn."""
+
   uvicorn.run(app, host='0.0.0.0', port=8000)
-
-
-if __name__ == '__main__':
-  p = Process(target=run_app)
-  p.start()
-  run_device()

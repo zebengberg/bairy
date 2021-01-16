@@ -1,6 +1,6 @@
 """Create dash plot and dash table as endpoints."""
 
-
+import os
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash
@@ -12,6 +12,8 @@ from bairy.device.configs import DATA_PATH, load_configs
 
 def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
   """Preprocess pandas DataFrame."""
+  if not os.path.exists(DATA_PATH):
+    return None
   df = pd.read_csv(DATA_PATH)
   df = df.set_index('time')
   df.index = pd.to_datetime(df.index)
@@ -44,8 +46,11 @@ def resample_df(df):
 
 def create_fig(only_last_day: bool = False):
   """Create plotly figure using one or two y-axes."""
-  df = preprocess_df(only_last_day=only_last_day)
+
   fig = go.Figure()
+  df = preprocess_df(only_last_day=only_last_day)
+  if df is None:
+    return fig
 
   units = list(load_configs().plot_axes.keys())
   assert len(units) in [1, 2]
@@ -101,6 +106,8 @@ dash_plot.layout = serve_plot
 def serve_table():
   """Dynamically serve updated dash_table.layout."""
   df = preprocess_df(True, True)
+  if df is None:
+    return DataTable()
   columns = [{'name': i, 'id': i} for i in df.columns]
   data = df.to_dict('records')
   return html.Div(children=[

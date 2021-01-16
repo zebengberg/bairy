@@ -26,8 +26,9 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/zebengberg/bairy',
-    packages=setuptools.find_namespace_packages(),
+    packages=setuptools.find_namespace_packages(exclude=['test*']),
     python_requires='>=3.7.0',
     install_requires=install_requires,
+    entry_points={'console_scripts': ['bairy = bairy.__main__:main']},
     version='0.0.1',
     license='MIT')

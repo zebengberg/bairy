@@ -4,3 +4,4 @@
 __pycache__
 bairy.egg-info
 data/
+dist/
