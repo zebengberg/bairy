@@ -10,13 +10,17 @@ import json
 
 # creating data directory within module
 MODULE_DIR = os.path.dirname(__file__)
-DATA_DIR = os.path.join(MODULE_DIR, 'data')
-BACKUP_DIR = os.path.join(DATA_DIR, 'backup')
-IP_PATH = os.path.join(DATA_DIR, 'ip_addresses.json')
-LOG_PATH = os.path.join(DATA_DIR, 'app.logs')
+PACKAGE_DIR = os.path.dirname(MODULE_DIR)
+DATA_DIR = os.path.join(PACKAGE_DIR, 'data')
+HUB_DATA_DIR = os.path.join(DATA_DIR, 'hub')
+BACKUP_DIR = os.path.join(HUB_DATA_DIR, 'backup')
+IP_PATH = os.path.join(HUB_DATA_DIR, 'ip_addresses.json')
+LOG_PATH = os.path.join(HUB_DATA_DIR, 'app.logs')
 RECACHE_INTERVAL = 60 * 60  # update every hour
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
+if not os.path.exists(HUB_DATA_DIR):
+  os.mkdir(HUB_DATA_DIR)
 if not os.path.exists(BACKUP_DIR):
   os.mkdir(BACKUP_DIR)
 

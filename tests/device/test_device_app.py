@@ -32,8 +32,8 @@ def test_all_endpoint_status():
 def test_root():
   """Test root endpoint."""
   r = client.get('/')
-  # assert redirecting to docs
-  assert r.url.split('/')[-1] == 'docs'
+  # assert redirecting to plot
+  assert 'plot' in r.url.split('/')
 
 
 def test_data():

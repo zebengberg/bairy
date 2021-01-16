@@ -90,8 +90,14 @@ def serve_plot():
   fig_all.layout.xaxis.rangeslider.visible = True
 
   return html.Div(children=[
-      html.H1(children='bairy'),
-      html.Div(children='Display sensor data from Raspberry Pi.'),
+
+      html.Div(children=[
+          html.H1(children='bairy'),
+          html.Div(children='Display sensor data from Raspberry Pi.'),
+          html.A('about bairy', href='https://github.com/zebengberg/bairy',
+                 style={'margin': '20px'}),
+          html.A('table', href='/table', style={'margin': '20px'})]),
+
       dcc.Graph(id='graph_all', figure=fig_all),
       dcc.Graph(id='graph_day', figure=fig_day)])
 
@@ -111,8 +117,14 @@ def serve_table():
   columns = [{'name': i, 'id': i} for i in df.columns]
   data = df.to_dict('records')
   return html.Div(children=[
-      html.H1(children='bairy'),
-      html.Div(children='Display data from Raspberry Pi.'),
+
+      html.Div(children=[
+          html.H1(children='bairy'),
+          html.Div(children='Display sensor data from Raspberry Pi.'),
+          html.A('about bairy', href='https://github.com/zebengberg/bairy',
+                 style={'margin': '20px'}),
+          html.A('plot', href='/plot', style={'margin': '20px'})]),
+
       DataTable(
           id='table',
           columns=columns,

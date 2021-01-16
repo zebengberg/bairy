@@ -48,8 +48,8 @@ app.mount('/table', WSGIMiddleware(dash_app.dash_table.server))
 
 @app.get('/')
 async def root():
-  """Redirect to docs."""
-  return RedirectResponse(url='/docs')
+  """Redirect to plot."""
+  return RedirectResponse(url='/plot')
 
 
 @app.get('/data')

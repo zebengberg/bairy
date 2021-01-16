@@ -6,10 +6,10 @@ import os
 import asyncio
 import aiohttp
 from bairy.hub.configs import DATA_DIR, BACKUP_DIR, RECACHE_INTERVAL, load_ips, LOG_PATH
-from bairy import device
+from bairy.device.utils import configure_logging
 
 
-device.utils.configure_logging(LOG_PATH)
+configure_logging(LOG_PATH)
 
 
 async def get_status(ip_address: str):
@@ -67,10 +67,10 @@ async def get_data(ip_address: str):
       if size < device.utils.count_rows(backup_path):
         raise ValueError('New data is missing some of previous data.')
       os.remove(backup_path)
-    logging.info(f'Successfully saved data from {ip_address}')
+    logging.info('Successfully saved data from %s', ip_address)
 
   except aiohttp.ClientConnectionError:
-    logging.error(f'Failed to connect to {ip_address}.')
+    logging.error('Failed to connect to %s', ip_address)
 
 
 async def stream_request(url: str, save_path: str):

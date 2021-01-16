@@ -18,6 +18,8 @@ def load_data():
   dfs = glob.glob(DATA_DIR + '/*.csv')
   if 'self' in ip_addresses:
     dfs.append(os.path.join(DEVICE_DATA_DIR, 'data.csv'))
+  if dfs == []:
+    return None
 
   dfs = [pd.read_csv(f) for f in dfs]
   dfs = [df[['time', 'pm_2.5']] for df in dfs]
@@ -36,6 +38,8 @@ def load_data():
 def create_fig():
   """Create plotly figure using one or two y-axes."""
   df = load_data()
+  if df is None:
+    return px.line()
   fig = px.line(df, x=df.index, y=df.columns)
   fig.update_layout(height=800)
   return fig
