@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+import glob
 import argparse
 from multiprocessing import Process
 from bairy.device import configs, utils, app, device, validate
@@ -88,8 +89,8 @@ def parse_args(args: list[str]):
   return parser.parse_args(args)
 
 
-def parse_remove(arg: str):
-  """Parse --remove flag."""
+def parse_device_remove(arg: str):
+  """Parse --remove flag under device mode."""
 
   if arg in ['data', 'all']:
     if os.path.exists(configs.DATA_PATH):
@@ -105,6 +106,67 @@ def parse_remove(arg: str):
       print(f'Removed stored file at {configs.CONFIGS_PATH}')
 
 
+def parse_hub_remove(arg: str):
+  """Parse --remove flag under hub mode."""
+  if arg in ['data', 'all']:
+    data_files = glob.glob(hub_configs.HUB_DATA_DIR + '/*.csv') + \
+        glob.glob(hub_configs.BACKUP_DIR + '/*.csv')
+    for f in data_files:
+      os.remove(f)
+      print(f'Removed stored file at {f}')
+  if arg in ['logs', 'all']:
+    if os.path.exists(hub_configs.LOG_PATH):
+      os.remove(hub_configs.LOG_PATH)
+      print(f'Removed stored file at {hub_configs.LOG_PATH}')
+  if arg in ['configs', 'all']:
+    if os.path.exists(hub_configs.IP_PATH):
+      os.remove(hub_configs.IP_PATH)
+      print(f'Removed stored file at {hub_configs.IP_PATH}')
+
+
+def parse_device(args: argparse.Namespace):
+  """Take actions under device mode."""
+  if args.configs_path:
+    configs.set_configs(args.configs_path[0])
+  elif args.set_random_configs:
+    configs.set_random_configs()
+  elif args.print_configs:
+    print(json.dumps(configs.load_device().dict(), indent=4))
+  elif args.configs_template:
+    with open('template_configs.json', 'w') as f:
+      f.write(json.dumps(validate.example_configs().dict(), indent=4))
+      print('Created template_configs.json file.')
+  elif args.remove:
+    parse_device_remove(args.remove[0])
+  elif args.print_data_path:
+    print(configs.DATA_PATH)
+  elif args.create_service:
+    create_service.create_service_file()
+  else:
+    if not os.path.exists(configs.CONFIGS_PATH):
+      raise FileNotFoundError('No configurations found! Run bairy --help')
+    utils.print_local_ip_address()
+    p = Process(target=app.run_app)
+    p.start()
+    device.run_device()
+
+
+def parse_hub(args: argparse.Namespace):
+  """Take actions under hub mode."""
+  if args.configs_path:
+    hub_configs.set_ips(args.configs_path[0])
+    request.validate_names()
+  elif args.print_configs:
+    print(json.dumps(hub_configs.load_ips(), indent=4))
+  else:
+    if not os.path.exists(hub_configs.IP_PATH):
+      raise FileNotFoundError('No IP addresses found! Run bairy --help')
+    utils.print_local_ip_address()
+    p = Process(target=hub_app.run_app)
+    p.start()
+    request.run_requests()
+
+
 def main():
   """Parse command line arguments and run actions."""
 
@@ -112,50 +174,9 @@ def main():
   check_startup()
 
   if args.mode == 'device':
-    if args.configs_path:
-      configs.set_configs(args.configs_path[0])
-    elif args.set_random_configs:
-      configs.set_random_configs()
-    elif args.print_configs:
-      print(json.dumps(configs.load_configs().dict(), indent=4))
-    elif args.configs_template:
-      with open('template_configs.json', 'w') as f:
-        f.write(json.dumps(validate.example_configs().dict(), indent=4))
-        print('Created template_configs.json file.')
-
-    elif args.remove:
-      parse_remove(args.remove[0])
-    elif args.print_data_path:
-      print(configs.DATA_PATH)
-    elif args.create_service:
-      create_service.create_service_file()
-
-    else:
-      if not os.path.exists(configs.CONFIGS_PATH):
-        raise FileNotFoundError('No configurations found! Run bairy --help')
-      utils.print_local_ip_address()
-      p = Process(target=app.run_app)
-      p.start()
-      device.run_device()
-
+    parse_device(args)
   elif args.mode == 'hub':
-    if args.configs_path:
-      hub_configs.set_ips(args.configs_path[0])
-      request.validate_names()
-    elif args.print_configs:
-      print(json.dumps(hub_configs.load_ips(), indent=4))
-    elif args.remove:
-      raise NotImplementedError
-    elif args.create_service:
-      raise NotImplementedError
-    else:
-      if not os.path.exists(hub_configs.IP_PATH):
-        raise FileNotFoundError('No IP addresses found! Run bairy --help')
-      utils.print_local_ip_address()
-      p = Process(target=hub_app.run_app)
-      p.start()
-      request.run_requests()
-
+    parse_hub(args)
   else:
     assert args.mode == 'both'
     raise NotImplementedError

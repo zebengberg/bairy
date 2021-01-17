@@ -1,5 +1,6 @@
 """Create dash plot and dash table as endpoints."""
 
+from __future__ import annotations
 import os
 import pandas as pd
 import plotly.graph_objects as go
@@ -7,25 +8,67 @@ from dash import Dash
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.device.configs import DATA_PATH, load_configs
+#from bairy.device.configs import DATA_PATH, load_device
+#from bairy.device.validate import DeviceConfigs
+from bairy.device import configs, validate
+
+
+def determine_plot_configs():
+  """Determine plotly axes and variables configurations."""
+
+  d = configs.load_device()
+  sensor_headers: dict[str, list[str]] = {'air': [],
+                                          'digital': [],
+                                          'random': []}
+  sensor_units = {'air': 'micrograms / cubic meter',
+                  'digital': 'intensity',
+                  'random': 'random'}
+
+  for s in d.sensors:
+    if s.sensor_type == 'air':
+      sensor_headers['air'] += ['pm_1.0', 'pm_2.5', 'pm_1.0']
+    else:
+      sensor_headers[s.sensor_type].append(s.header)
+
+  # testing
+  sensor_headers['digital'].append('fake')
+
+  # cleanup for later
+  empties = [k for k in sensor_headers.keys() if sensor_headers[k] == []]
+  for k in empties:
+    del sensor_headers[k]
+    del sensor_units[k]
+
+  # keeping at most two types of headers
+  if len(sensor_headers) == 3:
+    del sensor_headers['random']
+    del sensor_units['random']
+
+  return sensor_headers, sensor_units
 
 
 def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
   """Preprocess pandas DataFrame."""
-  if not os.path.exists(DATA_PATH):
+
+  if not os.path.exists(configs.DATA_PATH):
     return None
-  df = pd.read_csv(DATA_PATH)
+
+  df = pd.read_csv(configs.DATA_PATH)
+
+  import numpy as np
+  df['fake'] = np.random.random(len(df))
+
   df = df.set_index('time')
   df.index = pd.to_datetime(df.index)
 
-  configs = load_configs()
-  cols_to_keep = [col for axis in configs.plot_axes.values() for col in axis]
+  sensor_headers, _ = determine_plot_configs()
+  cols_to_keep = [col for key in sensor_headers for col in sensor_headers[key]]
   df = df[cols_to_keep]
-  # thresholds: 150 for pm10, 35 for pm2.5
 
   if only_last_day:
     start = pd.Timestamp.now() - pd.Timedelta('1 day')
     df = df[df.index > start]
+
   df = resample_df(df)
 
   if time_as_str:  # for plotly table
@@ -35,12 +78,13 @@ def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
 
 
 def resample_df(df):
-  """Modify df by resampling to bound number of points."""
-  rules = ['2S', '5S', '10S', '30S', '1T', '2T', '5T', '10T', '30T', '1H']
+  """Smooth and condense df by resampling."""
+  rules = ['30S', '1T', '2T', '4T',
+           '5T', '6T', '10T', '20T', '30T', '1H']
   for r in rules:
+    df = df.resample(r).mean()
     if len(df) < 5000:
       return df
-    df = df.resample(r).mean()
   return df
 
 
@@ -52,28 +96,25 @@ def create_fig(only_last_day: bool = False):
   if df is None:
     return fig
 
-  units = list(load_configs().plot_axes.keys())
-  assert len(units) in [1, 2]
+  sensor_headers, sensor_units = determine_plot_configs()
 
-  u = units[0]
-  for col in load_configs().plot_axes[u]:
-    fig.add_trace(go.Scatter(
-        x=df['time'],
-        y=df[col],
-        name=col,
-        yaxis='y'))
-    fig.update_layout(yaxis={'title': u, 'side': 'left'})
+  # TODO thresholds: 150 for pm10, 35 for pm2.5
+  for i, (key, cols) in enumerate(sensor_headers.items()):
+    unit = sensor_units[key]
+    side = 'left' if i == 0 else 'right'
+    yaxis = 'y' if i == 0 else 'y2'
+    yaxis_layout = 'yaxis' if i == 0 else 'yaxis2'
+    layout_params = {yaxis_layout: {'title': unit, 'side': side}}
+    if i == 1:
+      layout_params[yaxis_layout]['overlaying'] = 'y'
 
-  if len(units) == 2:
-    u = units[1]
-    for col in load_configs().plot_axes[u]:
+    for col in cols:
       fig.add_trace(go.Scatter(
           x=df['time'],
           y=df[col],
           name=col,
-          yaxis='y2'))
-      fig.update_layout(
-          yaxis2={'title': u, 'side': 'right', 'overlaying': 'y'})
+          yaxis=yaxis))
+    fig.update_layout(**layout_params)
 
   fig.update_layout(height=800)
   return fig

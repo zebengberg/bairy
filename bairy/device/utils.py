@@ -9,15 +9,15 @@ from bairy.device.configs import DATA_PATH, LOG_FORMAT, DATE_FORMAT
 
 def configure_logging(log_path: str):
   """Set up root logger to send logs to file and console."""
-  root_logger = logging.getLogger()
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
   formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
   file_handler = logging.FileHandler(log_path)
   file_handler.setFormatter(formatter)
-  root_logger.addHandler(file_handler)
-
+  logger.addHandler(file_handler)
   console_handler = logging.StreamHandler()
   console_handler.setFormatter(formatter)
-  root_logger.addHandler(console_handler)
+  logger.addHandler(console_handler)
 
 
 def read_headers():

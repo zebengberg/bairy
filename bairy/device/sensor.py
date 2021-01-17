@@ -9,7 +9,6 @@ from gpiozero import DigitalInputDevice
 from bairy.device.utils import configure_logging
 from bairy.device.configs import LOG_PATH
 
-
 configure_logging(LOG_PATH)
 
 

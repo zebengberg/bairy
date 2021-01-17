@@ -57,7 +57,7 @@ The web app can be accessed on the LAN. When `bairy` is run in the command line,
 
 ### Run at startup
 
-To enable `bairy` to run when the Raspberry Pi starts, follow the steps below. This is especially useful in _headless_ mode, that is, when the Raspberry Pi is not attached to a monitor. See the [official documentation](#https://www.raspberrypi.org/documentation/linux/usage/systemd.md) for more information on working with `systemd` on Raspberry Pi.
+To enable `bairy` to run when the Raspberry Pi starts, follow the steps below. This is especially useful in _headless_ mode, that is, when the Raspberry Pi is not attached to a monitor. See the [official documentation](https://www.raspberrypi.org/documentation/linux/usage/systemd.md) for more information on working with `systemd` on Raspberry Pi.
 
 1. Run `bairy -s` to create `bairy.service`.
 
@@ -69,7 +69,7 @@ To enable `bairy` to run when the Raspberry Pi starts, follow the steps below. T
 
 1. Run `sudo systemctl enable bairy.service` to enable it to run on startup.
 
-## `hub`
+## Central `hub`
 
 If you have several Raspberry Pis simulataneously collecting and sharing data, `bairy` allows you to merge and share the data through a common web app. This central `hub` can be run on one of the Raspberry Pis, or on an independent device.
 

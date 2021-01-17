@@ -44,13 +44,7 @@ class DeviceConfigs(BaseModel):
   sensors: List[Union[AirSensorConfigs,
                       DigitalSensorConfigs,
                       RandomSensorConfigs]]
-  plot_axes: Dict[str, List[str]]
   update_interval: int
-
-  @validator('plot_axes')
-  def check_plot_axes(cls, value: Dict[str, List[str]]):
-    assert len(value) in [1, 2]  # can only handle 1 or 2 y-axes currently
-    return value
 
 
 def random_configs():
@@ -59,9 +53,8 @@ def random_configs():
   s2 = RandomSensorConfigs(sensor_type='random', header='random2')
   s3 = RandomSensorConfigs(sensor_type='random', header='random3')
   d = DeviceConfigs(
-      name='random sensor',
+      name='random sensors',
       sensors=[s1, s2, s3],
-      plot_axes={'random reading': ['random1', 'random2', 'random3']},
       update_interval=1)
   assert d == DeviceConfigs(**d.dict())
   return d
@@ -75,10 +68,8 @@ def example_configs():
   s3 = DigitalSensorConfigs(sensor_type='digital',
                             bcm_pin=27, header='sound_state')
   d = DeviceConfigs(
-      name='razzy',
+      name='example sensors',
       sensors=[s1, s2, s3],
-      plot_axes={'micrograms / cubic meter': ['pm_2.5', 'pm_10'],
-                 'intensity': ['ir_state', 'sound_state']},
       update_interval=1)
   assert d == DeviceConfigs(**d.dict())
   return d

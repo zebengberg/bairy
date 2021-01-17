@@ -42,7 +42,7 @@ def set_random_configs():
     json.dump(d.dict(), f, indent=4)
 
 
-def load_configs():
+def load_device():
   """Look for stored configs.json file."""
   if os.path.exists(CONFIGS_PATH):
     with open(CONFIGS_PATH) as f:

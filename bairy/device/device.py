@@ -5,7 +5,7 @@ from bairy.device.validate import DeviceConfigs
 import os
 import asyncio
 from datetime import datetime
-from bairy.device.configs import DATA_PATH, DATE_FORMAT, load_configs
+from bairy.device.configs import DATA_PATH, DATE_FORMAT, load_device
 from bairy.device.sensor import Sensor
 
 
@@ -46,7 +46,7 @@ def create_data_file(sensors: list[Sensor]):
 def initialize_device(device: DeviceConfigs | None = None):
   """Helper function for run device."""
   if device is None:
-    device = load_configs()
+    device = load_device()
   sensors = [Sensor(s) for s in device.sensors]
   create_data_file(sensors)
   return device, sensors

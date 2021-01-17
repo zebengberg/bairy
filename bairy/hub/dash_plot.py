@@ -7,17 +7,24 @@ import plotly.express as px
 from dash import Dash
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.hub.configs import DATA_DIR, load_ips
-from bairy.device.configs import DATA_DIR as DEVICE_DATA_DIR
+from bairy.hub.configs import HUB_DATA_DIR, IP_PATH, load_ips
+from bairy.device import configs as device_configs
 from bairy.device.dash_app import resample_df
 
 
 def load_data():
   """Load cached data."""
-  ip_addresses = load_ips()
-  dfs = glob.glob(DATA_DIR + '/*.csv')
-  if 'self' in ip_addresses:
-    dfs.append(os.path.join(DEVICE_DATA_DIR, 'data.csv'))
+  if os.path.exists(IP_PATH):
+    ip_addresses = load_ips()
+  else:
+    return None
+
+  dfs = glob.glob(HUB_DATA_DIR + '/*.csv')
+  names = [f.split('/')[-1].split('.')[0] for f in dfs]
+
+  if 'self' in ip_addresses and os.path.exists(device_configs.DATA_PATH):
+    dfs.append(device_configs.DATA_PATH)
+    names.append(device_configs.load_device().name)
   if dfs == []:
     return None
 
@@ -26,7 +33,7 @@ def load_data():
   dfs = [df.set_index(pd.to_datetime(df['time'])) for df in dfs]
   dfs = [df.drop('time', axis=1) for df in dfs]
   # TODO: give better name
-  dfs = [df.rename(columns={'pm_2.5': i}) for i, df in enumerate(dfs)]
+  dfs = [df.rename(columns={'pm_2.5': name}) for df, name in zip(dfs, names)]
 
   df = pd.concat(dfs)
   # start = pd.Timestamp.now() - pd.Timedelta('1 day')

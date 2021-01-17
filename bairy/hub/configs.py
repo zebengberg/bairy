@@ -41,14 +41,8 @@ def set_ips(path: str):
 
 def load_ips() -> list[str]:
   """Read IP addresses saved in data directory."""
-  if os.path.exists(IP_PATH):
-    with open(IP_PATH) as f:
-      return json.load(f)
-
-  else:
-    print('No cached IP addresses found. See the README for instructions.')
-    print('Loading app with self as both device and host.')
-  return ['self']
+  with open(IP_PATH) as f:
+    return json.load(f)
 
 
 if __name__ == '__main__':

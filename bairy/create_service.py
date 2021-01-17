@@ -1,4 +1,7 @@
+"""Create bairy.service file for systemd scripts."""
+
 import subprocess
+import getpass
 
 
 def get_bairy_path():
@@ -15,14 +18,17 @@ def create_service_file():
   """Create bairy.service to be put into systemd."""
 
   path = get_bairy_path()
+  user = getpass.getuser()
   content = f'''
   [Unit]
   Description=Run bairy at startup
   After=network-online.target time-sync.target
+  User=pi
 
   [Service]
   Type=oneshot
   ExecStart={path}
+  User={user}
 
   [Install]
   WantedBy=default.target

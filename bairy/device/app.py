@@ -77,7 +77,7 @@ def status():
 @app.get('/status.json')
 def status_json():
   """Return device status as raw json."""
-  device_configs = configs.load_configs().dict()
+  device_configs = configs.load_device().dict()
   size = utils.get_data_size()
   n_rows = utils.count_rows(utils.DATA_PATH)
   latest = utils.latest_data()
