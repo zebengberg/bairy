@@ -4,12 +4,13 @@ from __future__ import annotations
 import logging
 import os
 import asyncio
+import nest_asyncio
 import aiohttp
 from bairy.hub import configs
 from bairy.device import utils, configs as device_configs
 from bairy.device.app import status_json
 
-
+nest_asyncio.apply()
 utils.configure_logging(configs.LOG_PATH)
 
 

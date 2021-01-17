@@ -11,8 +11,7 @@ client = TestClient(app)
 
 def test_ip_addresses_exists():
   """Confirm that the hub has stored ip addresses."""
-  ips = load_ips()
-  assert ips != ['self']
+  load_ips()
   validate_names()
 
 

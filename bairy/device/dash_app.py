@@ -8,9 +8,7 @@ from dash import Dash
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-#from bairy.device.configs import DATA_PATH, load_device
-#from bairy.device.validate import DeviceConfigs
-from bairy.device import configs, validate
+from bairy.device import configs
 
 
 def determine_plot_configs():
@@ -30,10 +28,7 @@ def determine_plot_configs():
     else:
       sensor_headers[s.sensor_type].append(s.header)
 
-  # testing
-  sensor_headers['digital'].append('fake')
-
-  # cleanup for later
+  # cleanup dictionaries
   empties = [k for k in sensor_headers.keys() if sensor_headers[k] == []]
   for k in empties:
     del sensor_headers[k]
@@ -49,14 +44,7 @@ def determine_plot_configs():
 
 def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
   """Preprocess pandas DataFrame."""
-
-  if not os.path.exists(configs.DATA_PATH):
-    return None
-
   df = pd.read_csv(configs.DATA_PATH)
-
-  import numpy as np
-  df['fake'] = np.random.random(len(df))
 
   df = df.set_index('time')
   df.index = pd.to_datetime(df.index)
@@ -79,8 +67,10 @@ def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
 
 def resample_df(df):
   """Smooth and condense df by resampling."""
-  rules = ['30S', '1T', '2T', '4T',
+  rules = ['20S', '30S', '1T', '2T', '4T',
            '5T', '6T', '10T', '20T', '30T', '1H']
+  if len(df) < 100:  # no resampling
+    return df
   for r in rules:
     df = df.resample(r).mean()
     if len(df) < 5000:
@@ -92,10 +82,10 @@ def create_fig(only_last_day: bool = False):
   """Create plotly figure using one or two y-axes."""
 
   fig = go.Figure()
-  df = preprocess_df(only_last_day=only_last_day)
-  if df is None:
+  if not os.path.exists(configs.DATA_PATH) or not os.path.exists(configs.CONFIGS_PATH):
     return fig
 
+  df = preprocess_df(only_last_day=only_last_day)
   sensor_headers, sensor_units = determine_plot_configs()
 
   # TODO thresholds: 150 for pm10, 35 for pm2.5
@@ -122,6 +112,7 @@ def create_fig(only_last_day: bool = False):
 
 def serve_plot():
   """Dynamically serve dash_plot.layout."""
+
   fig_day = create_fig(only_last_day=True)
   fig_day.layout.title = 'Data from last 24 hours'
   fig_day.layout.xaxis.rangeslider.visible = True
@@ -152,9 +143,10 @@ dash_plot.layout = serve_plot
 
 def serve_table():
   """Dynamically serve updated dash_table.layout."""
-  df = preprocess_df(True, True)
-  if df is None:
+  if not os.path.exists(configs.DATA_PATH) or not os.path.exists(configs.CONFIGS_PATH):
     return DataTable()
+
+  df = preprocess_df(True, True)
   columns = [{'name': i, 'id': i} for i in df.columns]
   data = df.to_dict('records')
   return html.Div(children=[
