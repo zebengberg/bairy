@@ -27,5 +27,4 @@ def test_parser():
 
 
 def test_service():
-  create_service.create_service_file()
-  os.remove('bairy.service')
+  create_service.create_service()

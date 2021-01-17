@@ -4,6 +4,8 @@ from __future__ import annotations
 import os
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
+import plotly.io as pio
 from dash import Dash
 from dash_table import DataTable
 import dash_core_components as dcc
@@ -11,20 +13,25 @@ import dash_html_components as html
 from bairy.device import configs
 
 
+pio.templates.default = 'plotly_white'
+
+
 def determine_plot_configs():
   """Determine plotly axes and variables configurations."""
 
   d = configs.load_device()
-  sensor_headers: dict[str, list[str]] = {'air': [],
+  # the order of the dictionaries below matter for plot tracing
+  # order is least important to most important
+  sensor_headers: dict[str, list[str]] = {'random': [],
                                           'digital': [],
-                                          'random': []}
-  sensor_units = {'air': 'micrograms / cubic meter',
+                                          'air': []}
+  sensor_units = {'random': 'random',
                   'digital': 'intensity',
-                  'random': 'random'}
+                  'air': 'micrograms / cubic meter'}
 
   for s in d.sensors:
     if s.sensor_type == 'air':
-      sensor_headers['air'] += ['pm_1.0', 'pm_2.5', 'pm_1.0']
+      sensor_headers['air'] += ['pm_1.0', 'pm_2.5', 'pm_10']
     else:
       sensor_headers[s.sensor_type].append(s.header)
 
@@ -42,7 +49,7 @@ def determine_plot_configs():
   return sensor_headers, sensor_units
 
 
-def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
+def preprocess_df(as_str: bool = False, only_last_day: bool = False):
   """Preprocess pandas DataFrame."""
   df = pd.read_csv(configs.DATA_PATH)
 
@@ -59,22 +66,26 @@ def preprocess_df(time_as_str: bool = False, only_last_day: bool = False):
 
   df = resample_df(df)
 
-  if time_as_str:  # for plotly table
+  if as_str:  # for plotly table
     df = df.iloc[::-1]
     df.index = df.index.astype(str)
+    df = df.round(3)
   return df.reset_index()  # move time back as a column
 
 
 def resample_df(df):
   """Smooth and condense df by resampling."""
-  rules = ['20S', '30S', '1T', '2T', '4T',
-           '5T', '6T', '10T', '20T', '30T', '1H']
-  if len(df) < 100:  # no resampling
-    return df
-  for r in rules:
-    df = df.resample(r).mean()
-    if len(df) < 5000:
-      return df
+  # 60 has many divisors
+  rules = ['1T', '2T', '3T', '4T', '5T', '6T', '10T', '20T', '30T', '1H']
+
+  if len(df) > 300:  # only resample if df large enough
+    for r in rules:
+      df = df.resample(r).mean()
+      if len(df) < 5000:
+        break
+
+  # smoothing even more
+  df = df.rolling(7, center=True).mean()
   return df
 
 
@@ -85,13 +96,20 @@ def create_fig(only_last_day: bool = False):
   if not os.path.exists(configs.DATA_PATH) or not os.path.exists(configs.CONFIGS_PATH):
     return fig
 
+  # see https://plotly.com/python/discrete-color/
+  colors = iter(px.colors.qualitative.Bold)
   df = preprocess_df(only_last_day=only_last_day)
   sensor_headers, sensor_units = determine_plot_configs()
 
-  # TODO thresholds: 150 for pm10, 35 for pm2.5
   for i, (key, cols) in enumerate(sensor_headers.items()):
     unit = sensor_units[key]
-    side = 'left' if i == 0 else 'right'
+    if len(sensor_headers) == 2 and i == 0:
+      side = 'right'
+      opacity = 0.4
+    else:
+      side = 'left'
+      opacity = 1.0
+
     yaxis = 'y' if i == 0 else 'y2'
     yaxis_layout = 'yaxis' if i == 0 else 'yaxis2'
     layout_params = {yaxis_layout: {'title': unit, 'side': side}}
@@ -103,8 +121,20 @@ def create_fig(only_last_day: bool = False):
           x=df['time'],
           y=df[col],
           name=col,
+          opacity=opacity,
+          line={'color': next(colors)},
           yaxis=yaxis))
     fig.update_layout(**layout_params)
+
+  # threshold for pm2.5
+  if 'air' in sensor_headers and df['pm_2.5'].max() > 40:
+    yaxis = 'y2' if len(sensor_headers) == 2 else 'y'
+    fig.add_trace(go.Scatter(
+        x=df['time'],
+        y=[35] * len(df),
+        name='pm_2.5 safe threshold',
+        yaxis=yaxis,
+        line={'dash': 'dot', 'color': next(colors)}))
 
   fig.update_layout(height=800)
   return fig
@@ -122,21 +152,23 @@ def serve_plot():
   fig_all.layout.xaxis.rangeslider.visible = True
 
   return html.Div(children=[
-
       html.Div(children=[
           html.H1(children='bairy'),
           html.Div(children='Display sensor data from Raspberry Pi.'),
-          html.A('about bairy', href='https://github.com/zebengberg/bairy',
-                 style={'margin': '20px'}),
-          html.A('table', href='/table', style={'margin': '20px'})]),
-
+          html.A(
+              'about bairy',
+              href='https://github.com/zebengberg/bairy',
+              style={'margin': '20px'}),
+          html.A(
+              'table',
+              href='/table',
+              style={'margin': '20px'})]),
       dcc.Graph(id='graph_all', figure=fig_all),
       dcc.Graph(id='graph_day', figure=fig_day)])
 
 
 css = 'https://codepen.io/chriddyp/pen/bWLwgP.css'
-dash_plot = Dash(requests_pathname_prefix='/plot/',
-                 external_stylesheets=[css])
+dash_plot = Dash(requests_pathname_prefix='/plot/', external_stylesheets=[css])
 # See https://dash.plotly.com/live-updates
 dash_plot.layout = serve_plot
 
@@ -154,10 +186,16 @@ def serve_table():
       html.Div(children=[
           html.H1(children='bairy'),
           html.Div(children='Display sensor data from Raspberry Pi.'),
-          html.A('about bairy', href='https://github.com/zebengberg/bairy',
-                 style={'margin': '20px'}),
-          html.A('plot', href='/plot', style={'margin': '20px'})]),
-
+          html.A(
+              'about bairy',
+              href='https://github.com/zebengberg/bairy',
+              style={'margin': '20px'}
+          ),
+          html.A(
+              'plot',
+              href='/plot',
+              style={'margin': '20px'}
+          )]),
       DataTable(
           id='table',
           columns=columns,

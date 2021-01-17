@@ -59,15 +59,11 @@ The web app can be accessed on the LAN. When `bairy` is run in the command line,
 
 To enable `bairy` to run when the Raspberry Pi starts, follow the steps below. This is especially useful in _headless_ mode, that is, when the Raspberry Pi is not attached to a monitor. See the [official documentation](https://www.raspberrypi.org/documentation/linux/usage/systemd.md) for more information on working with `systemd` on Raspberry Pi.
 
-1. Run `bairy -s` to create `bairy.service`.
+1. Run `bairy -s` to create `bairy.service` file in the `/etc/systemd/system` directory.
 
-1. Copy the `bairy.service` file to the `systemd` directory.
+1. Run `sudo systemctl start bairy.service` to check if the service works.
 
-   ```sh
-   sudo cp bairy.service /etc/systemd/system/bairy.service
-   ```
-
-1. Run `sudo systemctl enable bairy.service` to enable it to run on startup.
+1. Run `sudo systemctl stop bairy.service` to stop the service works.
 
 ## Central `hub`
 

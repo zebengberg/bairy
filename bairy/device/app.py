@@ -6,6 +6,7 @@ import os
 import json
 import subprocess
 import sys
+import logging
 from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse, StreamingResponse, RedirectResponse
@@ -40,6 +41,7 @@ def configure_app_logging(log_path: str):
   LC['loggers']['uvicorn.access']['handlers'].append('access_file')
 
 
+utils.configure_logging(configs.LOG_PATH)
 configure_app_logging(configs.LOG_PATH)
 app = FastAPI()
 app.mount('/plot', WSGIMiddleware(dash_app.dash_plot.server))
@@ -91,15 +93,20 @@ def status_json():
 def experimental(param: str):
   """Run experimental param on device."""
   if param == 'reboot':
+    logging.info('reboot attempt ...')
     os.system('sudo reboot')
     return 'fail'  # if here, the reboot failed
 
   if param == 'update':
+    logging.info('bairy update requested!')
     command = [sys.executable, '-m', 'pip', 'install', '-U', 'bairy']
     try:
       subprocess.check_call(command)
+      logging.info('bairy update success')
       return 'success'
     except subprocess.CalledProcessError as e:
+      logging.info('bairy update failure')
+      logging.info(e)
       return e
 
   else:

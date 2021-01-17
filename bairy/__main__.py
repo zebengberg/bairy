@@ -12,16 +12,6 @@ from bairy.hub import configs as hub_configs, app as hub_app, request
 from bairy import create_service
 
 
-def check_startup():
-  """Check systemd for bairy."""
-  path = '/etc/systemd/system'
-  if os.path.exists(path):
-    d = os.listdir(path)
-    d = [n.split('.')[0] for n in d]
-    if 'bairy' not in d:
-      print('bairy is not will run on startup. To enable this, see the README.')
-
-
 def parse_args(args: list[str]):
   """Create argparse parser."""
   parser = argparse.ArgumentParser()
@@ -141,7 +131,7 @@ def parse_device(args: argparse.Namespace):
   elif args.print_data_path:
     print(configs.DATA_PATH)
   elif args.create_service:
-    create_service.create_service_file()
+    create_service.create_service()
   else:
     if not os.path.exists(configs.CONFIGS_PATH):
       raise FileNotFoundError('No configurations found! Run bairy --help')
@@ -171,8 +161,6 @@ def main():
   """Parse command line arguments and run actions."""
 
   args = parse_args(sys.argv[1:])
-  check_startup()
-
   if args.mode == 'device':
     parse_device(args)
   elif args.mode == 'hub':
