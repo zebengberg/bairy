@@ -2,11 +2,11 @@
 
 > Display data from Raspberry Pi.
 
-Suppose you have a Raspberry Pi IoT-style device on a local network that measures and records data. `bairy` provides a framework to share the data across the local network. `bairy` has the ability to combine, centralize, and display results gathered from multiple devices.
+Suppose you have a Raspberry Pi IoT-style device that measures and records data. `bairy` provides a framework to share the data across a local network. `bairy` also has the ability to combine, centralize, and display results from multiple devices.
 
 ## Install
 
-This package requires at least Python 3.7. The following instructions work for Raspbian 10 running on a Raspberry Pi B+.
+This package requires at least Python 3.7. The following instructions work for Raspbian 10 running on a Raspberry Pi 3 B+.
 
 1. Install the dependencies for the `numpy`-`pandas`-`scipy` suite.
 
@@ -15,18 +15,18 @@ This package requires at least Python 3.7. The following instructions work for R
    sudo apt install libatlas-base-dev
    ```
 
-1. Install this package with `pip3 install bairy`. If `pip3` is not recognized, try `python3 -m pip install bairy`.
+1. Install `bairy` with `pip3 install bairy`. If `pip3` is not recognized, try `python3 -m pip install bairy`.
 
 1. Try out `bairy` with random configurations.
 
    ```sh
-   # initialize bairy with sensors that give random readings
+   # initialize bairy with sensors providing random readings
    bairy --set-random-configs
    # run the app
    bairy
    ```
 
-1. Point your web browser to `localhost:8000/status`. The sensor readings update every second -- refresh your browser to get the latest reading.
+1. Point your web browser to `localhost:8000/status`. The sensor readings update every second. Refresh your browser to get the latest reading.
 
 1. To stop `bairy`, go back to your terminal and press CTRL + C. Simply run `bairy` again to continue recording data.
 
@@ -59,7 +59,7 @@ The web app can be accessed on the LAN. When `bairy` is run in the command line,
 
 To enable `bairy` to run when the Raspberry Pi starts, follow the steps below. This is especially useful in _headless_ mode, that is, when the Raspberry Pi is not attached to a monitor. See the [official documentation](https://www.raspberrypi.org/documentation/linux/usage/systemd.md) for more information on working with `systemd` on Raspberry Pi.
 
-1. Run `bairy -s` to create `bairy.service` file in the `/etc/systemd/system` directory.
+1. Run `bairy --create-service` to create `bairy.service` file in the `/etc/systemd/system` directory.
 
 1. Run `sudo systemctl start bairy.service` to check if the service works.
 
@@ -67,7 +67,27 @@ To enable `bairy` to run when the Raspberry Pi starts, follow the steps below. T
 
 ## Central `hub`
 
-If you have several Raspberry Pis simulataneously collecting and sharing data, `bairy` allows you to merge and share the data through a common web app. This central `hub` can be run on one of the Raspberry Pis, or on an independent device.
+If you have several Raspberry Pis simultaneously collecting and sharing data, `bairy` allows you to merge and share the data through a common web app. This central `hub` can be run on one of the Raspberry Pis, or on an independent device.
+
+1. You will need to the know the IP addresses of the Raspberry Pi devices which are running `bairy` to capture data. Create a simple text file with these IP addresses. If the hub host is also acting as a sensing device, include the word `self` in this file.
+
+   ```txt
+   # ip.txt
+
+   192.168.0.17
+   192.168.0.34
+   self
+   ```
+
+1. Register these IP addresses with `bairy`.
+
+   ```sh
+   bairy hub --set-configs ip.txt
+   ```
+
+1. Now run `bairy hub` to launch the hub web app. Data is periodically requested from devices (every hour), then merged into a single `plotly` plot. Point your browser to `localhost:8000` to view the app.
+
+1. Run `bairy hub --service` to create a startup service to run the hub. This will override any previously created device service.
 
 ## License
 

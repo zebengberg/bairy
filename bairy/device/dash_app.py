@@ -49,7 +49,7 @@ def determine_plot_configs():
   return sensor_headers, sensor_units
 
 
-def preprocess_df(as_str: bool = False, only_last_day: bool = False):
+def preprocess_df(only_last_day: bool, as_str: bool = False):
   """Preprocess pandas DataFrame."""
   df = pd.read_csv(configs.DATA_PATH)
 
@@ -85,11 +85,11 @@ def resample_df(df):
         break
 
   # smoothing even more
-  df = df.rolling(7, center=True).mean()
+  df = df.rolling(7, center=True, min_periods=1).mean()
   return df
 
 
-def create_fig(only_last_day: bool = False):
+def create_fig(only_last_day: bool):
   """Create plotly figure using one or two y-axes."""
 
   fig = go.Figure()
@@ -136,7 +136,13 @@ def create_fig(only_last_day: bool = False):
         yaxis=yaxis,
         line={'dash': 'dot', 'color': next(colors)}))
 
-  fig.update_layout(height=800)
+  name = configs.load_device().name
+  if only_last_day:
+    title = f'{name} data over last 24 hours'
+  else:
+    title = f'{name} data over entire runtime'
+  fig.update_layout(height=800, title=title)
+  fig.layout.xaxis.rangeslider.visible = True
   return fig
 
 
@@ -144,17 +150,12 @@ def serve_plot():
   """Dynamically serve dash_plot.layout."""
 
   fig_day = create_fig(only_last_day=True)
-  fig_day.layout.title = 'Data from last 24 hours'
-  fig_day.layout.xaxis.rangeslider.visible = True
-
   fig_all = create_fig(only_last_day=False)
-  fig_all.layout.title = 'All available data'
-  fig_all.layout.xaxis.rangeslider.visible = True
 
   return html.Div(children=[
       html.Div(children=[
-          html.H1(children='bairy'),
-          html.Div(children='Display sensor data from Raspberry Pi.'),
+          html.H1(children='bairy', style={'fontWeight': 'bold'}),
+          html.H3(children='Display sensor data from Raspberry Pi.'),
           html.A(
               'about bairy',
               href='https://github.com/zebengberg/bairy',
@@ -163,8 +164,8 @@ def serve_plot():
               'table',
               href='/table',
               style={'margin': '20px'})]),
-      dcc.Graph(id='graph_all', figure=fig_all),
-      dcc.Graph(id='graph_day', figure=fig_day)])
+      dcc.Graph(id='graph_day', figure=fig_day),
+      dcc.Graph(id='graph_all', figure=fig_all)])
 
 
 css = 'https://codepen.io/chriddyp/pen/bWLwgP.css'
@@ -182,20 +183,17 @@ def serve_table():
   columns = [{'name': i, 'id': i} for i in df.columns]
   data = df.to_dict('records')
   return html.Div(children=[
-
       html.Div(children=[
-          html.H1(children='bairy'),
-          html.Div(children='Display sensor data from Raspberry Pi.'),
+          html.H1(children='bairy', style={'fontWeight': 'bold'}),
+          html.H3(children='Display sensor data from Raspberry Pi.'),
           html.A(
               'about bairy',
               href='https://github.com/zebengberg/bairy',
-              style={'margin': '20px'}
-          ),
+              style={'margin': '20px'}),
           html.A(
               'plot',
               href='/plot',
-              style={'margin': '20px'}
-          )]),
+              style={'margin': '20px'})]),
       DataTable(
           id='table',
           columns=columns,

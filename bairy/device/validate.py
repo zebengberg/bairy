@@ -3,7 +3,7 @@ d -> Device(**d.dict()) is an involution."""
 
 
 # cannot use __future__ annotations with pydantic
-from typing import List, Union, Dict
+from typing import List, Union
 from pydantic import BaseModel, validator
 
 

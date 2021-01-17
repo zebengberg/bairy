@@ -1,10 +1,10 @@
 """Control IoT device by reading sensor values and writing data to disk."""
 
 from __future__ import annotations
-from bairy.device.validate import DeviceConfigs
 import os
 import asyncio
 from datetime import datetime
+from bairy.device.validate import DeviceConfigs
 from bairy.device.configs import DATA_PATH, DATE_FORMAT, load_device
 from bairy.device.sensor import Sensor
 
@@ -52,7 +52,7 @@ def initialize_device(device: DeviceConfigs | None = None):
   return device, sensors
 
 
-def run_device():
+async def run_device():
   """Run device indefinitely."""
   device, sensors = initialize_device()
 
@@ -62,6 +62,4 @@ def run_device():
       write_data(data)
       await asyncio.sleep(device.update_interval)
 
-  loop = asyncio.get_event_loop()
-  loop.create_task(run())
-  loop.run_forever()
+  return await asyncio.create_task(run())

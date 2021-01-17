@@ -27,9 +27,10 @@ async def get_status(ip_address: str):
 def get_all_statuses():
   """Get status of every device known to hub."""
   ip_addresses = configs.load_ips()
-  loop = asyncio.get_event_loop()
   tasks = [get_status(ip_address) for ip_address in ip_addresses]
   gathered = asyncio.gather(*tasks)
+
+  loop = asyncio.get_event_loop()
   statuses = loop.run_until_complete(gathered)
   return statuses
 
@@ -96,10 +97,9 @@ async def request_data_indefinitely(ip_address: str):
     await asyncio.sleep(configs.RECACHE_INTERVAL)
 
 
-def run_requests():
+async def run_requests():
   """Run requests indefinitely."""
-  loop = asyncio.get_event_loop()
-  for ip_address in configs.load_ips():
-    if ip_address != 'self':
-      loop.create_task(request_data_indefinitely(ip_address))
-  loop.run_forever()
+  ip_addresses = configs.load_ips()
+  tasks = [request_data_indefinitely(
+      ip_address) for ip_address in ip_addresses if ip_address != 'self']
+  return await asyncio.gather(*tasks)

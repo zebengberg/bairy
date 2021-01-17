@@ -6,6 +6,7 @@ import sys
 import json
 import glob
 import argparse
+import asyncio
 from multiprocessing import Process
 from bairy.device import configs, utils, app, device, validate
 from bairy.hub import configs as hub_configs, app as hub_app, request
@@ -19,7 +20,7 @@ def parse_args(args: list[str]):
       'mode',
       type=str,
       nargs='?',
-      choices=['device', 'hub', 'both'],
+      choices=['device', 'hub'],
       help='set the mode in which bairy runs',
       default='device')
 
@@ -81,7 +82,6 @@ def parse_args(args: list[str]):
 
 def parse_device_remove(arg: str):
   """Parse --remove flag under device mode."""
-
   if arg in ['data', 'all']:
     if os.path.exists(configs.DATA_PATH):
       os.remove(configs.DATA_PATH)
@@ -138,7 +138,7 @@ def parse_device(args: argparse.Namespace):
     utils.print_local_ip_address()
     p = Process(target=app.run_app)
     p.start()
-    device.run_device()
+    asyncio.run(device.run_device())
 
 
 def parse_hub(args: argparse.Namespace):
@@ -148,18 +148,25 @@ def parse_hub(args: argparse.Namespace):
     request.validate_names()
   elif args.print_configs:
     print(json.dumps(hub_configs.load_ips(), indent=4))
+  elif args.create_service:
+    create_service.create_service(True)
   else:
     if not os.path.exists(hub_configs.IP_PATH):
       raise FileNotFoundError('No IP addresses found! Run bairy --help')
     utils.print_local_ip_address()
     p = Process(target=hub_app.run_app)
     p.start()
-    request.run_requests()
+
+    ip_addresses = hub_configs.load_ips()
+    if 'self' in ip_addresses:
+      task = asyncio.gather(device.run_device(), request.run_requests())
+      asyncio.run(task)
+    else:
+      asyncio.run(request.run_requests())
 
 
 def main():
   """Parse command line arguments and run actions."""
-
   args = parse_args(sys.argv[1:])
   if args.mode == 'device':
     parse_device(args)

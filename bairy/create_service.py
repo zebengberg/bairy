@@ -16,10 +16,12 @@ def get_bairy_path():
   return out.decode().rstrip()
 
 
-def create_service():
+def create_service(as_hub: bool = False):
   """Create bairy.service to be put into systemd."""
 
   path = get_bairy_path()
+  if as_hub:
+    path += ' hub'
   user = getpass.getuser()
   content = f'''
   [Unit]
