@@ -1,7 +1,7 @@
 """Create dash plot and dash table as endpoints."""
 
 from __future__ import annotations
-import os
+import logging
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
@@ -10,9 +10,9 @@ from dash import Dash
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.device import configs
+from bairy.device import configs, utils
 
-
+utils.configure_logging(configs.LOG_PATH)
 pio.templates.default = 'plotly_white'
 
 
@@ -92,58 +92,60 @@ def resample_df(df):
 def create_fig(only_last_day: bool):
   """Create plotly figure using one or two y-axes."""
 
-  fig = go.Figure()
-  if not os.path.exists(configs.DATA_PATH) or not os.path.exists(configs.CONFIGS_PATH):
-    return fig
+  try:
+    fig = go.Figure()
+    # see https://plotly.com/python/discrete-color/
+    colors = iter(px.colors.qualitative.Bold)
+    df = preprocess_df(only_last_day=only_last_day)
+    sensor_headers, sensor_units = determine_plot_configs()
 
-  # see https://plotly.com/python/discrete-color/
-  colors = iter(px.colors.qualitative.Bold)
-  df = preprocess_df(only_last_day=only_last_day)
-  sensor_headers, sensor_units = determine_plot_configs()
+    for i, (key, cols) in enumerate(sensor_headers.items()):
+      unit = sensor_units[key]
+      if len(sensor_headers) == 2 and i == 0:
+        side = 'right'
+        opacity = 0.4
+      else:
+        side = 'left'
+        opacity = 1.0
 
-  for i, (key, cols) in enumerate(sensor_headers.items()):
-    unit = sensor_units[key]
-    if len(sensor_headers) == 2 and i == 0:
-      side = 'right'
-      opacity = 0.4
-    else:
-      side = 'left'
-      opacity = 1.0
+      yaxis = 'y' if i == 0 else 'y2'
+      yaxis_layout = 'yaxis' if i == 0 else 'yaxis2'
+      layout_params = {yaxis_layout: {'title': unit, 'side': side}}
+      if i == 1:
+        layout_params[yaxis_layout]['overlaying'] = 'y'
 
-    yaxis = 'y' if i == 0 else 'y2'
-    yaxis_layout = 'yaxis' if i == 0 else 'yaxis2'
-    layout_params = {yaxis_layout: {'title': unit, 'side': side}}
-    if i == 1:
-      layout_params[yaxis_layout]['overlaying'] = 'y'
+      for col in cols:
+        fig.add_trace(go.Scatter(
+            x=df['time'],
+            y=df[col],
+            name=col,
+            opacity=opacity,
+            line={'color': next(colors)},
+            yaxis=yaxis))
+      fig.update_layout(**layout_params)
 
-    for col in cols:
+    # threshold for pm2.5
+    if 'air' in sensor_headers and df['pm_2.5'].max() > 40:
+      yaxis = 'y2' if len(sensor_headers) == 2 else 'y'
       fig.add_trace(go.Scatter(
           x=df['time'],
-          y=df[col],
-          name=col,
-          opacity=opacity,
-          line={'color': next(colors)},
-          yaxis=yaxis))
-    fig.update_layout(**layout_params)
+          y=[35] * len(df),
+          name='pm_2.5 safe threshold',
+          yaxis=yaxis,
+          line={'dash': 'dot', 'color': next(colors)}))
 
-  # threshold for pm2.5
-  if 'air' in sensor_headers and df['pm_2.5'].max() > 40:
-    yaxis = 'y2' if len(sensor_headers) == 2 else 'y'
-    fig.add_trace(go.Scatter(
-        x=df['time'],
-        y=[35] * len(df),
-        name='pm_2.5 safe threshold',
-        yaxis=yaxis,
-        line={'dash': 'dot', 'color': next(colors)}))
+    name = configs.load_device().name
+    if only_last_day:
+      title = f'{name} data over last 24 hours'
+    else:
+      title = f'{name} data over entire runtime'
+    fig.update_layout(height=800, title=title)
+    fig.layout.xaxis.rangeslider.visible = True
+    return fig
 
-  name = configs.load_device().name
-  if only_last_day:
-    title = f'{name} data over last 24 hours'
-  else:
-    title = f'{name} data over entire runtime'
-  fig.update_layout(height=800, title=title)
-  fig.layout.xaxis.rangeslider.visible = True
-  return fig
+  except (KeyError, FileNotFoundError) as e:
+    logging.info(e)
+    return go.Figure()
 
 
 def serve_plot():
@@ -176,12 +178,21 @@ dash_plot.layout = serve_plot
 
 def serve_table():
   """Dynamically serve updated dash_table.layout."""
-  if not os.path.exists(configs.DATA_PATH) or not os.path.exists(configs.CONFIGS_PATH):
-    return DataTable()
+  try:
+    df = preprocess_df(True, True)
+    columns = [{'name': i, 'id': i} for i in df.columns]
+    data = df.to_dict('records')
+    table = DataTable(
+        id='table',
+        columns=columns,
+        data=data,
+        style_cell=dict(textAlign='left'),
+        style_header=dict(backgroundColor="paleturquoise"),
+        style_data=dict(backgroundColor="lavender"))
+  except (KeyError, FileNotFoundError) as e:
+    logging.info(e)
+    table = DataTable()
 
-  df = preprocess_df(True, True)
-  columns = [{'name': i, 'id': i} for i in df.columns]
-  data = df.to_dict('records')
   return html.Div(children=[
       html.Div(children=[
           html.H1(children='bairy', style={'fontWeight': 'bold'}),
@@ -194,13 +205,7 @@ def serve_table():
               'plot',
               href='/plot',
               style={'margin': '20px'})]),
-      DataTable(
-          id='table',
-          columns=columns,
-          data=data,
-          style_cell=dict(textAlign='left'),
-          style_header=dict(backgroundColor="paleturquoise"),
-          style_data=dict(backgroundColor="lavender"))])
+      table])
 
 
 dash_table = Dash(requests_pathname_prefix='/table/',

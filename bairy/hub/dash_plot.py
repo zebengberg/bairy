@@ -2,20 +2,21 @@
 
 import os
 import glob
+import logging
 import pandas as pd
 import plotly.express as px
 from dash import Dash
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.hub.configs import HUB_DATA_DIR, IP_PATH, load_ips
-from bairy.device import configs as device_configs
+from bairy.hub.configs import HUB_DATA_DIR, LOG_PATH, load_ips
+from bairy.device import configs as device_configs, utils
 from bairy.device.dash_app import resample_df
+
+utils.configure_logging(LOG_PATH)
 
 
 def load_data(only_last_day: bool):
   """Load cached data."""
-  if not os.path.exists(IP_PATH):
-    return None
 
   ip_addresses = load_ips()
   # could implement a glob in backup directory in case of active request
@@ -25,16 +26,14 @@ def load_data(only_last_day: bool):
   if 'self' in ip_addresses and os.path.exists(device_configs.DATA_PATH):
     dfs.append(device_configs.DATA_PATH)
     names.append(device_configs.load_device().name)
-  if dfs == []:
-    return None
 
   dfs = [pd.read_csv(f) for f in dfs]
 
   # must include time
   cols_to_keep = ['time', 'pm_2.5', 'pm_1.0']
-
   dfs = [df[cols_to_keep]
          for df in dfs if set(cols_to_keep).issubset(set(df.columns))]
+
   dfs = [df.set_index(pd.to_datetime(df['time'])) for df in dfs]
 
   # dfs = [df.drop('time', axis=1) for df in dfs]
@@ -51,18 +50,21 @@ def load_data(only_last_day: bool):
 
 def create_fig(only_last_day: bool):
   """Create plotly figure using one or two y-axes."""
-  df = load_data(only_last_day)
-  if df is None:
-    return px.line()
-  fig = px.line(df, x=df.index, y=df.columns)
+  try:
+    df = load_data(only_last_day)
+    fig = px.line(df, x=df.index, y=df.columns)
 
-  if only_last_day:
-    title = f'Data over last 24 hours'
-  else:
-    title = f'Data over entire runtime'
-  fig.update_layout(height=800, title=title)
-  fig.layout.xaxis.rangeslider.visible = True
-  return fig
+    if only_last_day:
+      title = f'Data over last 24 hours'
+    else:
+      title = f'Data over entire runtime'
+    fig.update_layout(height=800, title=title)
+    fig.layout.xaxis.rangeslider.visible = True
+    fig.layout.yaxis.title = 'micrograms / cubic meter'
+    return fig
+  except (KeyError, FileNotFoundError) as e:
+    logging.info(e)
+    return px.line()
 
 
 def serve_plot():

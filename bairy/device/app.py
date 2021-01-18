@@ -2,7 +2,6 @@
 
 
 from __future__ import annotations
-import os
 import json
 import subprocess
 import sys
@@ -94,8 +93,7 @@ def experimental(param: str):
   """Run experimental param on device."""
   if param == 'reboot':
     logging.info('reboot attempt ...')
-    os.system('sudo reboot')
-    return 'fail'  # if here, the reboot failed
+    subprocess.run(['sudo', 'reboot'])
 
   if param == 'update':
     logging.info('bairy update requested!')

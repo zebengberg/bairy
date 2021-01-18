@@ -36,13 +36,15 @@ class Sensor:
     keys_dict = {
         'pm_1.0': (4, 5),
         'pm_2.5': (6, 7),
-        'pm_10': (8, 9),
-        'n_beyond_0.3': (16, 17),
-        'n_beyond_0.5': (18, 19),
-        'n_beyond_1.0': (20, 21),
-        'n_beyond_2.5': (22, 23),
-        'n_beyond_5.0': (24, 25),
-        'n_beyond_10': (26, 27)}
+        'pm_10': (8, 9)}
+    # ignoring the other possible readings
+    # 'n_beyond_0.3': (16, 17),
+    # 'n_beyond_0.5': (18, 19),
+    # 'n_beyond_1.0': (20, 21),
+    # 'n_beyond_2.5': (22, 23),
+    # 'n_beyond_5.0': (24, 25),
+    # 'n_beyond_10': (26, 27)}
+
     data_dict: dict[str, int | None] = {k: None for k in keys_dict}
 
     with smbus2.SMBus(1) as bus:

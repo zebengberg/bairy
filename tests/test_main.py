@@ -1,7 +1,7 @@
-"""Test __main__ argparse."""
+"""Test __main__ functions."""
 
 import os
-from bairy.__main__ import parse_args
+from bairy.__main__ import parse_args, parse_device, parse_hub
 from bairy import create_service
 
 
@@ -20,11 +20,36 @@ def test_parser():
   assert args.set_random_configs
 
   args = parse_args(['--set-configs', 'fake_path'])
-  assert args.configs_path == ['fake_path']
+  assert args.path == ['fake_path']
 
   args = parse_args(['--remove', 'logs'])
   assert args.remove == ['logs']
 
 
 def test_service():
+  """Test create_service()."""
   create_service.create_service()
+
+
+def test_main():
+  """Simulate several main flags."""
+  args = parse_args(['-p'])
+  parse_device(args)
+  parse_hub(args)
+
+  args = parse_args(['-d'])
+  parse_device(args)
+  parse_hub(args)
+
+  args = parse_args(['-t'])
+  parse_device(args)
+  os.remove('template_configs.json')
+
+  try:
+    args = parse_args(['-rm foo'])
+    parse_device(args)
+    parse_hub(args)
+  except SystemExit:
+    pass
+  else:
+    raise ValueError

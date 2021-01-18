@@ -53,6 +53,8 @@ def latest_data():
 
 def get_data_size():
   """Return the size of the data file as a string."""
+  if not os.path.exists(DATA_PATH):
+    return '0'
   n = os.path.getsize(DATA_PATH)
   for unit in ['', 'Ki', 'Mi', 'Gi']:
     if n < 1024.0:

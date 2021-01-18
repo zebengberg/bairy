@@ -29,8 +29,8 @@ def parse_args(args: list[str]):
       '--set-configs',
       type=str,
       nargs=1,
-      dest='configs_path',
-      help='set configs by passing path/to/configs.json',
+      dest='path',
+      help='set configs (or IP addresses in hub mode) by passing path/to/configs.json',
       required=False)
 
   parser.add_argument(
@@ -116,8 +116,8 @@ def parse_hub_remove(arg: str):
 
 def parse_device(args: argparse.Namespace):
   """Take actions under device mode."""
-  if args.configs_path:
-    configs.set_configs(args.configs_path[0])
+  if args.path:
+    configs.set_configs(args.path[0])
   elif args.set_random_configs:
     configs.set_random_configs()
   elif args.print_configs:
@@ -143,13 +143,19 @@ def parse_device(args: argparse.Namespace):
 
 def parse_hub(args: argparse.Namespace):
   """Take actions under hub mode."""
-  if args.configs_path:
-    hub_configs.set_ips(args.configs_path[0])
+  if args.path:
+    hub_configs.set_ips(args.path[0])
     request.validate_names()
   elif args.print_configs:
     print(json.dumps(hub_configs.load_ips(), indent=4))
+  elif args.remove:
+    parse_hub_remove(args.remove[0])
   elif args.create_service:
     create_service.create_service(True)
+  elif args.print_data_path:
+    print(hub_configs.HUB_DATA_DIR)
+  elif args.configs_template or args.set_random_configs:
+    raise NotImplementedError('Not available for hub mode.')
   else:
     if not os.path.exists(hub_configs.IP_PATH):
       raise FileNotFoundError('No IP addresses found! Run bairy --help')
@@ -170,11 +176,9 @@ def main():
   args = parse_args(sys.argv[1:])
   if args.mode == 'device':
     parse_device(args)
-  elif args.mode == 'hub':
-    parse_hub(args)
   else:
-    assert args.mode == 'both'
-    raise NotImplementedError
+    assert args.mode == 'hub'
+    parse_hub(args)
 
 
 if __name__ == '__main__':
