@@ -88,27 +88,42 @@ def status_json():
   return device_status
 
 
-@app.get('/experimental/{param}')
-def experimental(param: str):
-  """Run experimental param on device."""
-  if param == 'reboot':
-    logging.info('reboot attempt ...')
-    subprocess.run(['sudo', 'reboot'])
-
-  if param == 'update':
-    logging.info('bairy update requested!')
-    command = [sys.executable, '-m', 'pip', 'install', '-U', 'bairy']
+@app.get('/remote/{command}', response_class=PlainTextResponse)
+def remote(command: str):
+  """Run remote command on device."""
+  if command == 'reboot':
+    logging.info('Reboot requested')
     try:
-      subprocess.check_call(command)
-      logging.info('bairy update success')
+      subprocess.check_call(['sudo', 'reboot'])
+    except subprocess.CalledProcessError as e:
+      logging.error('Reboot failure')
+      logging.error(e)
+    return None
+
+  if command == 'update':
+    logging.info('Update requested')
+    call = [sys.executable, '-m', 'pip', 'install', '-U', 'bairy']
+    try:
+      subprocess.check_call(call)
+      logging.info('Update success')
       return 'success'
     except subprocess.CalledProcessError as e:
-      logging.info('bairy update failure')
-      logging.info(e)
-      return e
+      logging.error('Update failure')
+      logging.error(e)
+      return 'fail'
+
+  elif command == 'disk':
+    logging.info('df requested')
+    p = subprocess.Popen(['df', '-h'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if err:
+      logging.error(err.decode())
+    return out.decode()
 
   else:
-    return 'unknown param'
+    return 'unknown command'
 
 
 def run_app():

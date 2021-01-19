@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import os
+import shutil
 import sys
 import json
 import glob
@@ -59,7 +60,7 @@ def parse_args(args: list[str]):
       '--remove',
       type=str,
       nargs=1,
-      choices=['data', 'logs', 'configs', 'all'],
+      choices=['data', 'logs', 'configs', 'all', 'entire'],
       help='remove saved data',
       required=False)
 
@@ -94,6 +95,10 @@ def parse_device_remove(arg: str):
     if os.path.exists(configs.CONFIGS_PATH):
       os.remove(configs.CONFIGS_PATH)
       print(f'Removed stored file at {configs.CONFIGS_PATH}')
+  if arg == 'entire':
+    if os.path.exists(configs.DATA_DIR):
+      shutil.rmtree(hub_configs.DATA_DIR)
+      print(f'Removed entire directory {hub_configs.DATA_DIR}')
 
 
 def parse_hub_remove(arg: str):
@@ -112,6 +117,8 @@ def parse_hub_remove(arg: str):
     if os.path.exists(hub_configs.IP_PATH):
       os.remove(hub_configs.IP_PATH)
       print(f'Removed stored file at {hub_configs.IP_PATH}')
+  if arg == 'entire':
+    shutil.rmtree(hub_configs.DATA_DIR)
 
 
 def parse_device(args: argparse.Namespace):

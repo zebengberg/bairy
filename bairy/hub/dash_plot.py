@@ -4,11 +4,12 @@ import os
 import glob
 import logging
 import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 from dash import Dash
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.hub.configs import HUB_DATA_DIR, LOG_PATH, load_ips
+from bairy.hub.configs import BACKUP_DIR, HUB_DATA_DIR, LOG_PATH, load_ips, IP_PATH
 from bairy.device import configs as device_configs, utils
 from bairy.device.dash_app import resample_df
 
@@ -19,9 +20,14 @@ def load_data(only_last_day: bool):
   """Load cached data."""
 
   ip_addresses = load_ips()
-  # could implement a glob in backup directory in case of active request
   dfs = glob.glob(HUB_DATA_DIR + '/*.csv')
   names = [f.split('/')[-1].split('.')[0] for f in dfs]
+
+  # looking for copy in hub/backup to use instead
+  for i, name in enumerate(names):
+    backup_csv = os.path.join(BACKUP_DIR, name + '.csv')
+    if os.path.exists(backup_csv):
+      dfs[i] = backup_csv
 
   if 'self' in ip_addresses and os.path.exists(device_configs.DATA_PATH):
     dfs.append(device_configs.DATA_PATH)
@@ -50,19 +56,36 @@ def load_data(only_last_day: bool):
 
 def create_fig(only_last_day: bool):
   """Create plotly figure using one or two y-axes."""
+
+  # avoiding errors when device not configured to run as hub
+  if not os.path.exists(IP_PATH):
+    return px.line()
+
   try:
     df = load_data(only_last_day)
     fig = px.line(df, x=df.index, y=df.columns)
 
+    # showing pm2.5 safe threshold in any column exceeds
+    for k in df.columns:
+      if 'pm_2.5' in k:
+        if df[k].max() > 40:
+          fig.add_trace(go.Scatter(
+              x=df.index,
+              y=[35] * len(df),
+              name='pm_2.5 safe threshold',
+              line={'dash': 'dot'}))
+          break
+
     if only_last_day:
-      title = f'Data over last 24 hours'
+      title = 'Data over last 24 hours'
     else:
-      title = f'Data over entire runtime'
+      title = 'Data over entire runtime'
     fig.update_layout(height=800, title=title)
     fig.layout.xaxis.rangeslider.visible = True
     fig.layout.yaxis.title = 'micrograms / cubic meter'
     return fig
-  except (KeyError, FileNotFoundError) as e:
+
+  except (KeyError, FileNotFoundError, ValueError) as e:
     logging.info(e)
     return px.line()
 

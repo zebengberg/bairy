@@ -63,6 +63,7 @@ class Sensor:
         logging.warning('Internal error on air sensor.')
       if sum(data[:30]) != (data[30] << 8) + data[31]:
         logging.warning('Bad checksum from air sensor.')
+        logging.warning(data)
 
       for k, (byte1, byte2) in keys_dict.items():
         data_dict[k] = (data[byte1] << 8) + data[byte2]

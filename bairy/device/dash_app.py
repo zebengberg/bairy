@@ -1,6 +1,7 @@
 """Create dash plot and dash table as endpoints."""
 
 from __future__ import annotations
+import os
 import logging
 import pandas as pd
 import plotly.graph_objects as go
@@ -92,6 +93,10 @@ def resample_df(df):
 def create_fig(only_last_day: bool):
   """Create plotly figure using one or two y-axes."""
 
+  # avoiding errors before any data is captured
+  if not os.path.exists(configs.DATA_PATH):
+    return go.Figure()
+
   try:
     fig = go.Figure()
     # see https://plotly.com/python/discrete-color/
@@ -178,6 +183,11 @@ dash_plot.layout = serve_plot
 
 def serve_table():
   """Dynamically serve updated dash_table.layout."""
+
+  # avoiding errors before any data is captured
+  if not os.path.exists(configs.DATA_PATH):
+    return DataTable()
+
   try:
     df = preprocess_df(True, True)
     columns = [{'name': i, 'id': i} for i in df.columns]
@@ -189,6 +199,7 @@ def serve_table():
         style_cell=dict(textAlign='left'),
         style_header=dict(backgroundColor="paleturquoise"),
         style_data=dict(backgroundColor="lavender"))
+
   except (KeyError, FileNotFoundError) as e:
     logging.info(e)
     table = DataTable()
