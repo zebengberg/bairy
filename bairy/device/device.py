@@ -5,7 +5,8 @@ import os
 import asyncio
 from datetime import datetime
 from bairy.device.validate import DeviceConfigs
-from bairy.device.configs import DATA_PATH, DATE_FORMAT, load_device
+from bairy.device.configs import DATA_PATH, load_device
+from bairy.log_configs import DATE_FORMAT
 from bairy.device.sensor import Sensor
 
 

@@ -31,7 +31,7 @@ setuptools.setup(
     python_requires='>=3.7.0',
     install_requires=install_requires,
     entry_points={'console_scripts': ['bairy = bairy.__main__:main']},
-    version='0.1.0',
+    version='0.1.2',
     classifiers=['License :: OSI Approved :: MIT License',
                  'Programming Language :: Python :: 3',
                  'Programming Language :: Python :: 3.7',

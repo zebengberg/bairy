@@ -15,8 +15,6 @@ DEVICE_DATA_DIR = os.path.join(DATA_DIR, 'device')
 CONFIGS_PATH = os.path.join(DEVICE_DATA_DIR, 'configs.json')
 LOG_PATH = os.path.join(DEVICE_DATA_DIR, 'app.logs')
 DATA_PATH = os.path.join(DEVICE_DATA_DIR, 'data.csv')
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
 if not os.path.exists(DEVICE_DATA_DIR):
@@ -50,5 +48,4 @@ def load_device():
     d = DeviceConfigs(**configs)
     assert d == DeviceConfigs(**configs)
     return d
-  else:
-    raise FileNotFoundError('No configurations found! Run bairy --help')
+  raise FileNotFoundError('No configurations found! Run bairy --help')

@@ -4,25 +4,13 @@ from __future__ import annotations
 import logging
 import os
 import socket
-from bairy.device.configs import DATA_PATH, LOG_FORMAT, DATE_FORMAT
-
-
-def configure_logging(log_path: str):
-  """Set up root logger to send logs to file and console."""
-  logger = logging.getLogger()
-  logger.setLevel(logging.INFO)
-  formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
-  file_handler = logging.FileHandler(log_path)
-  file_handler.setFormatter(formatter)
-  logger.addHandler(file_handler)
-  console_handler = logging.StreamHandler()
-  console_handler.setFormatter(formatter)
-  logger.addHandler(console_handler)
+import subprocess
+from bairy.device import configs
 
 
 def read_headers():
   """Read first line of data."""
-  with open(DATA_PATH) as f:
+  with open(configs.DATA_PATH) as f:
     headers = f.readline()
     return headers.rstrip()
 
@@ -31,7 +19,7 @@ def read_last_line():
   """Read last line of data."""
   # fast approach to get final line of a file
   # see https://stackoverflow.com/questions/46258499/
-  with open(DATA_PATH, 'rb') as f:
+  with open(configs.DATA_PATH, 'rb') as f:
     f.seek(-2, os.SEEK_END)
     while f.read(1) != b'\n':
       f.seek(-2, os.SEEK_CUR)
@@ -53,9 +41,9 @@ def latest_data():
 
 def get_data_size():
   """Return the size of the data file as a string."""
-  if not os.path.exists(DATA_PATH):
+  if not os.path.exists(configs.DATA_PATH):
     return '0'
-  n = os.path.getsize(DATA_PATH)
+  n = os.path.getsize(configs.DATA_PATH)
   for unit in ['', 'Ki', 'Mi', 'Gi']:
     if n < 1024.0:
       return f'{n:.2f} {unit}B'
@@ -70,13 +58,22 @@ def count_rows(path: str):
     return sum(1 for _ in f)
 
 
-def print_local_ip_address():
+def get_local_ip_address():
   """See https://stackoverflow.com/questions/166506/"""
 
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   s.connect(('8.8.8.8', 80))
-  ip = s.getsockname()[0]
+  ip: str = s.getsockname()[0]
   s.close()
-  print('#' * 65)
-  print('LOCAL IP ADDRESS:', ip)
-  print('#' * 65)
+  return ip
+
+
+def get_disk_size():
+  """Call df."""
+  p = subprocess.Popen(['df', '-h'],
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
+  out, err = p.communicate()
+  if err:
+    logging.error(err.decode())
+  return out.decode()

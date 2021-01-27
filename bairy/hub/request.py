@@ -1,27 +1,32 @@
 """Gather configuration and data from devices."""
 
 from __future__ import annotations
+from typing import Any
 import logging
 import os
+import json
 import asyncio
 import nest_asyncio
 import aiohttp
 from bairy.hub import configs
-from bairy.device import utils, configs as device_configs
-from bairy.device.app import status_json
+from bairy.device import utils, configs as device_configs, app as device_app
+
 
 nest_asyncio.apply()
-utils.configure_logging(configs.LOG_PATH)
 
 
 async def get_status(ip_address: str):
   """Get status of device associated to ip_address."""
   if ip_address == 'self':
-    return status_json()
+    status_as_str = device_app.status()
+    d: dict[str, Any] = json.loads(status_as_str)
+    return d
+
   async with aiohttp.ClientSession() as session:
-    url = 'http://' + ip_address + ':8000/' + 'status.json'
+    url = 'http://' + ip_address + ':8000/' + 'status'
     async with session.get(url) as r:
-      return await r.json()
+      d: dict[str, Any] = await r.json()
+      return d
 
 
 def get_all_statuses():

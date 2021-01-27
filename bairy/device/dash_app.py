@@ -11,9 +11,9 @@ from dash import Dash
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.device import configs, utils
+from bairy.device import configs
 
-utils.configure_logging(configs.LOG_PATH)
+
 pio.templates.default = 'plotly_white'
 
 

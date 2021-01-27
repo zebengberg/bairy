@@ -41,7 +41,7 @@ def test_data():
   r = client.get('/data')
   df = pd.read_csv(BytesIO(r.content))
 
-  r = client.get('status.json')
+  r = client.get('status')
   d = r.json()
   headers = d['latest_reading'].keys()
   n_rows = d['data_details']['n_rows']
@@ -59,13 +59,14 @@ def test_logs():
 
 def test_status():
   """Test status endpoint."""
-  r1 = client.get('/status')
-  r2 = client.get('/status.json')
-  assert r1.json() == r2.json()
-  d = r1.json()
+  r = client.get('/status')
+  d = r.json()
   assert 'device_configs' in d
+  assert 'data_details' in d
   assert 'latest_reading' in d
   assert 'time' in d['latest_reading']
+  assert 'disk_space' in d
+  assert 'ip_address' in d
 
 
 def test_fake_endpoint():

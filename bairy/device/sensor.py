@@ -6,10 +6,6 @@ import logging
 from pydantic import BaseModel
 import smbus2  # or just smbus
 from gpiozero import DigitalInputDevice
-from bairy.device.utils import configure_logging
-from bairy.device.configs import LOG_PATH
-
-configure_logging(LOG_PATH)
 
 
 class Sensor:

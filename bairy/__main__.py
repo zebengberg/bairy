@@ -11,7 +11,7 @@ import asyncio
 from multiprocessing import Process
 from bairy.device import configs, utils, app, device, validate
 from bairy.hub import configs as hub_configs, app as hub_app, request
-from bairy import create_service
+from bairy import create_service, log_configs
 
 
 def parse_args(args: list[str]):
@@ -142,7 +142,10 @@ def parse_device(args: argparse.Namespace):
   else:
     if not os.path.exists(configs.CONFIGS_PATH):
       raise FileNotFoundError('No configurations found! Run bairy --help')
-    utils.print_local_ip_address()
+
+    print('#' * 65)
+    print('LOCAL IP ADDRESS:', utils.get_local_ip_address())
+    print('#' * 65)
     p = Process(target=app.run_app)
     p.start()
     asyncio.run(device.run_device())
@@ -166,7 +169,10 @@ def parse_hub(args: argparse.Namespace):
   else:
     if not os.path.exists(hub_configs.IP_PATH):
       raise FileNotFoundError('No IP addresses found! Run bairy --help')
-    utils.print_local_ip_address()
+
+    print('#' * 65)
+    print('LOCAL IP ADDRESS:', utils.get_local_ip_address())
+    print('#' * 65)
     p = Process(target=hub_app.run_app)
     p.start()
 
@@ -182,9 +188,11 @@ def main():
   """Parse command line arguments and run actions."""
   args = parse_args(sys.argv[1:])
   if args.mode == 'device':
+    log_configs.configure_root_logging(configs.LOG_PATH)
     parse_device(args)
   else:
     assert args.mode == 'hub'
+    log_configs.configure_root_logging(hub_configs.LOG_PATH)
     parse_hub(args)
 
 

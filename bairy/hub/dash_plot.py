@@ -9,11 +9,9 @@ import plotly.express as px
 from dash import Dash
 import dash_core_components as dcc
 import dash_html_components as html
-from bairy.hub.configs import BACKUP_DIR, HUB_DATA_DIR, LOG_PATH, load_ips, IP_PATH
-from bairy.device import configs as device_configs, utils
+from bairy.hub.configs import BACKUP_DIR, HUB_DATA_DIR, load_ips, IP_PATH
+from bairy.device import configs as device_configs
 from bairy.device.dash_app import resample_df
-
-utils.configure_logging(LOG_PATH)
 
 
 def load_data(only_last_day: bool):
