@@ -50,11 +50,13 @@ def status():
   n_rows = utils.count_rows(configs.DATA_PATH)
   latest = utils.latest_data()
   ip_address = utils.get_local_ip_address()
-  disk_space = utils.get_disk_size()
+  disk_space = utils.get_disk_space()
+  bairy_version = utils.get_bairy_version()
 
   device_status = {'device_configs': device_configs,
                    'data_details': {'file_size': size, 'n_rows': n_rows},
-                   'disk_space': disk_space,
+                   'available_disk_space': disk_space,
+                   'bairy_version': bairy_version,
                    'ip_address': ip_address,
                    'latest_reading': latest}
   return json.dumps(device_status, indent=4)

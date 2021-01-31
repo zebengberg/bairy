@@ -50,7 +50,7 @@ def determine_plot_configs():
   return sensor_headers, sensor_units
 
 
-def preprocess_df(only_last_day: bool, as_str: bool = False):
+def preprocess_df(time_period: str = 'all', as_str: bool = False):
   """Preprocess pandas DataFrame."""
   df = pd.read_csv(configs.DATA_PATH)
 
@@ -61,8 +61,11 @@ def preprocess_df(only_last_day: bool, as_str: bool = False):
   cols_to_keep = [col for key in sensor_headers for col in sensor_headers[key]]
   df = df[cols_to_keep]
 
-  if only_last_day:
+  if time_period == 'day':
     start = pd.Timestamp.now() - pd.Timedelta('1 day')
+    df = df[df.index > start]
+  elif time_period == 'week':
+    start = pd.Timestamp.now() - pd.Timedelta('7 days')
     df = df[df.index > start]
 
   df = resample_df(df)
@@ -90,7 +93,7 @@ def resample_df(df):
   return df
 
 
-def create_fig(only_last_day: bool):
+def create_fig(time_period: str = 'all'):
   """Create plotly figure using one or two y-axes."""
 
   # avoiding errors before any data is captured
@@ -101,7 +104,7 @@ def create_fig(only_last_day: bool):
     fig = go.Figure()
     # see https://plotly.com/python/discrete-color/
     colors = iter(px.colors.qualitative.Bold)
-    df = preprocess_df(only_last_day=only_last_day)
+    df = preprocess_df(time_period)
     sensor_headers, sensor_units = determine_plot_configs()
 
     for i, (key, cols) in enumerate(sensor_headers.items()):
@@ -140,12 +143,16 @@ def create_fig(only_last_day: bool):
           line={'dash': 'dot', 'color': next(colors)}))
 
     name = configs.load_device().name
-    if only_last_day:
+    if time_period == 'day':
       title = f'{name} data over last 24 hours'
+    elif time_period == 'week':
+      title = f'{name} data over last 7 days'
     else:
       title = f'{name} data over entire runtime'
+
     fig.update_layout(height=800, title=title)
     fig.layout.xaxis.rangeslider.visible = True
+    fig.layout.yaxis.fixedrange = False
     return fig
 
   except (KeyError, FileNotFoundError) as e:
@@ -156,8 +163,9 @@ def create_fig(only_last_day: bool):
 def serve_plot():
   """Dynamically serve dash_plot.layout."""
 
-  fig_day = create_fig(only_last_day=True)
-  fig_all = create_fig(only_last_day=False)
+  fig_day = create_fig('day')
+  fig_week = create_fig('week')
+  fig_all = create_fig()
 
   return html.Div(children=[
       html.Div(children=[
@@ -172,6 +180,7 @@ def serve_plot():
               href='/table',
               style={'margin': '20px'})]),
       dcc.Graph(id='graph_day', figure=fig_day),
+      dcc.Graph(id='graph_week', figure=fig_week),
       dcc.Graph(id='graph_all', figure=fig_all)])
 
 
@@ -189,7 +198,7 @@ def serve_table():
     return DataTable()
 
   try:
-    df = preprocess_df(True, True)
+    df = preprocess_df('day', True)
     columns = [{'name': i, 'id': i} for i in df.columns]
     data = df.to_dict('records')
     table = DataTable(

@@ -1,10 +1,10 @@
 """A module holding utility functions for device."""
 
 from __future__ import annotations
-import logging
 import os
 import socket
-import subprocess
+import shutil
+import pkg_resources
 from bairy.device import configs
 
 
@@ -68,12 +68,12 @@ def get_local_ip_address():
   return ip
 
 
-def get_disk_size():
-  """Call df."""
-  p = subprocess.Popen(['df', '-h'],
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE)
-  out, err = p.communicate()
-  if err:
-    logging.error(err.decode())
-  return out.decode()
+def get_disk_space():
+  """Get available disk space."""
+  gb = shutil.disk_usage('/').free / (1 << 30)
+  return f'{gb:.3f} GB'
+
+
+def get_bairy_version():
+  """Use pkg_resources to get bairy version."""
+  return pkg_resources.get_distribution('bairy').version

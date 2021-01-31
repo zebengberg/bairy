@@ -65,7 +65,8 @@ def test_status():
   assert 'data_details' in d
   assert 'latest_reading' in d
   assert 'time' in d['latest_reading']
-  assert 'disk_space' in d
+  assert 'available_disk_space' in d
+  assert 'bairy_version' in d
   assert 'ip_address' in d
 
 
