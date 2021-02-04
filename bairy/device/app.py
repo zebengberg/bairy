@@ -2,7 +2,6 @@
 
 
 from __future__ import annotations
-from typing import Any
 import os
 import json
 import subprocess
@@ -39,7 +38,10 @@ def data():
 def logs():
   """Return app log as plain text."""
   with open(configs.LOG_PATH) as f:
-    return f.read()
+    lines = f.readlines()
+  # return as reverse chronological
+  lines.reverse()
+  return ''.join(lines)
 
 
 @app.get('/status', response_class=responses.PlainTextResponse)
@@ -70,9 +72,7 @@ def remote(command: str):
     try:
       subprocess.check_call(['sudo', 'reboot'])
     except subprocess.CalledProcessError as e:
-      logging.error('Reboot failure')
-      logging.error(e)
-      return 'fail'
+      pass
     return 'rebooting'
 
   if command == 'update':
@@ -93,7 +93,25 @@ def remote(command: str):
     device.initialize_device()  # create new data.csv with headers
     return 'success'
 
+  elif command == 'remove-logs':
+    logging.info('Remove logs requested')
+    with open(configs.LOG_PATH, 'w') as f:
+      f.close()
+    logging.info('Logs cleared')
+    return 'success'
+
   return 'unknown command'
+
+
+@app.post('/set-configs')
+def set_configs(d: device.DeviceConfigs):
+  """Set device config file remotely."""
+  logging.info('setting new configs')
+  logging.info(d)
+  assert d == device.DeviceConfigs(**d.dict())
+  with open(configs.CONFIGS_PATH, 'w') as f:
+    json.dump(d.dict(), f, indent=4)
+  return 'new configs will be active after reboot'
 
 
 def run_app():
