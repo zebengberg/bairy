@@ -54,7 +54,9 @@ The app includes various endpoints, described below. To navigate to the endpoint
 - `/status` Displays a json object showing active configurations and device status. See the json example below.
 - `/remote/update` Update the `bairy` software with `pip`. Requires the Raspberry Pi does not prompt for `sudo` password, which is the default setting.
 - `/remote/reboot` Reboot the Raspberry Pi. See [run at startup](#run-at-startup) to ensure `bairy` restarts.
-- `/remote/disk` Display disk usage statistics by calling `df -h`.
+- `/remote/remove-data` Remove device data from Raspberry Pi.
+- `/remove/remove-logs` Clear log file on Raspberry Pi.
+- `/set-configs` An HTTP POST endpoint for setting device configurations.
 - `/table` Renders a Dash table showing resampled data. The resampling window depends the overall size of the `data.csv` file. Raw data should be obtained through the `/data` endpoint.
 - `/plot` Renders an interactive Dash plot showing resampled data.
 

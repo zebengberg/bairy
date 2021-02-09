@@ -15,6 +15,12 @@ DEVICE_DATA_DIR = os.path.join(DATA_DIR, 'device')
 CONFIGS_PATH = os.path.join(DEVICE_DATA_DIR, 'configs.json')
 LOG_PATH = os.path.join(DEVICE_DATA_DIR, 'app.logs')
 DATA_PATH = os.path.join(DEVICE_DATA_DIR, 'data.csv')
+DATA_DAY_PATH = os.path.join(DEVICE_DATA_DIR, 'data_day.csv')
+DATA_WEEK_PATH = os.path.join(DEVICE_DATA_DIR, 'data_week.csv')
+DATA_ALL_PATH = os.path.join(DEVICE_DATA_DIR, 'data_all.csv')
+PREPROCESSED_DATA_PATHS = {'day': DATA_DAY_PATH,
+                           'week': DATA_WEEK_PATH,
+                           'all': DATA_ALL_PATH}
 if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
 if not os.path.exists(DEVICE_DATA_DIR):

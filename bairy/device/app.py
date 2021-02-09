@@ -12,13 +12,12 @@ from fastapi import responses
 from fastapi.middleware.wsgi import WSGIMiddleware
 import uvicorn
 from bairy import log_configs
-from bairy.device import utils, configs, dash_table, device
-from bairy.device.dash_plot import dash_plot
+from bairy.device import utils, configs, dash_table, dash_plot, device
 
 
 app = FastAPI()
-app.mount('/plot', WSGIMiddleware(dash_plot.server))
-app.mount('/table', WSGIMiddleware(dash_table.dash_table.server))
+app.mount('/plot', WSGIMiddleware(dash_plot.plot.server))
+app.mount('/table', WSGIMiddleware(dash_table.table.server))
 
 
 @app.get('/')

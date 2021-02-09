@@ -1,20 +1,20 @@
 """Create dash table for /table endpoint."""
 
 import os
-import logging
+import pandas as pd
 from dash import Dash
 from dash.dependencies import Input, Output
 from dash_table import DataTable
 import dash_core_components as dcc
 import dash_html_components as html
 from bairy.device.dash_plot import css
-from bairy.device import configs, preprocess
+from bairy.device import configs
 
-dash_table = Dash(
+table = Dash(
     requests_pathname_prefix='/table/',
     external_stylesheets=[css]
 )
-dash_table.layout = html.Div(children=[
+table.layout = html.Div(children=[
     # title and links
     html.Div(children=[
         html.H1(children='bairy', style={'fontWeight': 'bold'}),
@@ -49,22 +49,22 @@ dash_table.layout = html.Div(children=[
 ])
 
 
-@dash_table.callback(
+@table.callback(
     [Output('table', 'columns'), Output('table', 'data')],
     Input('interval-component', 'n_intervals')
 )
 def serve_table(_):
   """Dynamically serve table columns and data."""
+
+  data_path = configs.PREPROCESSED_DATA_PATHS['day']
   # avoiding errors before any data is captured
-  if not os.path.exists(configs.DATA_PATH):
+  if not os.path.exists(data_path):
     return None, None
 
-  try:
-    df = preprocess.preprocess_df('day', True)
-    columns = [{'name': i, 'id': i} for i in df.columns]
-    data = df.to_dict('records')
-    return columns, data
-
-  except (KeyError, FileNotFoundError) as e:
-    logging.warning(e)
-    return None, None
+  df = pd.read_csv(data_path, index_col=0)
+  df = df.iloc[::-1]
+  df.index = df.index.astype(str)
+  df = df.round(3)
+  columns = [{'name': i, 'id': i} for i in df.columns]
+  data = df.to_dict('records')
+  return columns, data

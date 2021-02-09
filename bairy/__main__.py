@@ -9,7 +9,7 @@ import glob
 import argparse
 import asyncio
 from multiprocessing import Process
-from bairy.device import configs, utils, app, device, validate
+from bairy.device import configs, utils, app, device, validate, preprocess
 from bairy.hub import configs as hub_configs, app as hub_app, request
 from bairy import create_service, log_configs
 
@@ -148,7 +148,8 @@ def parse_device(args: argparse.Namespace):
     print('#' * 65)
     p = Process(target=app.run_app)
     p.start()
-    asyncio.run(device.run_device())
+    tasks = asyncio.gather(device.run_device(), preprocess.run_preprocess())
+    asyncio.run(tasks)
 
 
 def parse_hub(args: argparse.Namespace):
@@ -178,8 +179,8 @@ def parse_hub(args: argparse.Namespace):
 
     ip_addresses = hub_configs.load_ips()
     if 'self' in ip_addresses:
-      task = asyncio.gather(device.run_device(), request.run_requests())
-      asyncio.run(task)
+      tasks = asyncio.gather(device.run_device(), request.run_requests())
+      asyncio.run(tasks)
     else:
       asyncio.run(request.run_requests())
 

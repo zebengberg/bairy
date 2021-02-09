@@ -1,6 +1,8 @@
 """Preprocess data for Plotly/Dash."""
 
 from __future__ import annotations
+import itertools
+import asyncio
 import pandas as pd
 from bairy.device import configs
 
@@ -38,7 +40,7 @@ def determine_plot_configs():
   return sensor_headers, sensor_units
 
 
-def preprocess_df(time_period: str = 'all', as_str: bool = False):
+def preprocess_df(time_period: str = 'all'):
   """Preprocess pandas DataFrame."""
   df = pd.read_csv(configs.DATA_PATH)
 
@@ -57,11 +59,6 @@ def preprocess_df(time_period: str = 'all', as_str: bool = False):
     df = df[df.index > start]
 
   df = resample_df(df)
-
-  if as_str:  # for plotly table
-    df = df.iloc[::-1]
-    df.index = df.index.astype(str)
-    df = df.round(3)
   return df.reset_index()  # move time back as a column
 
 
@@ -79,3 +76,17 @@ def resample_df(df):
   # smoothing even more
   df = df.rolling(7, center=True, min_periods=1).mean()
   return df
+
+
+async def run_preprocess():
+  """Run preprocessing indefinitely."""
+
+  time_periods = list(configs.PREPROCESSED_DATA_PATHS.keys())
+
+  async def run():
+    for time_period in itertools.cycle(time_periods):
+      df = preprocess_df(time_period)
+      df.to_csv(configs.PREPROCESSED_DATA_PATHS[time_period])
+      await asyncio.sleep(60)
+
+  return await asyncio.create_task(run())
