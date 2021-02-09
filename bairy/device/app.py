@@ -12,12 +12,13 @@ from fastapi import responses
 from fastapi.middleware.wsgi import WSGIMiddleware
 import uvicorn
 from bairy import log_configs
-from bairy.device import utils, configs, dash_app, device
+from bairy.device import utils, configs, dash_table, device
+from bairy.device.dash_plot import dash_plot
 
 
 app = FastAPI()
-app.mount('/plot', WSGIMiddleware(dash_app.dash_plot.server))
-app.mount('/table', WSGIMiddleware(dash_app.dash_table.server))
+app.mount('/plot', WSGIMiddleware(dash_plot.server))
+app.mount('/table', WSGIMiddleware(dash_table.dash_table.server))
 
 
 @app.get('/')
@@ -55,12 +56,14 @@ def status():
   disk_space = utils.get_disk_space()
   bairy_version = utils.get_bairy_version()
 
-  device_status = {'device_configs': device_configs,
-                   'data_details': {'file_size': size, 'n_rows': n_rows},
-                   'available_disk_space': disk_space,
-                   'bairy_version': bairy_version,
-                   'ip_address': ip_address,
-                   'latest_reading': latest}
+  device_status = {
+      'device_configs': device_configs,
+      'data_details': {'file_size': size, 'n_rows': n_rows},
+      'available_disk_space': disk_space,
+      'bairy_version': bairy_version,
+      'ip_address': ip_address,
+      'latest_reading': latest
+  }
   return json.dumps(device_status, indent=4)
 
 
@@ -116,6 +119,7 @@ def set_configs(d: device.DeviceConfigs):
 
 def run_app():
   """Run app with uvicorn."""
+
   uvicorn.run(
       app,
       host='0.0.0.0',

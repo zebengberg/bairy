@@ -10,8 +10,7 @@ from dash import Dash
 import dash_core_components as dcc
 import dash_html_components as html
 from bairy.hub.configs import BACKUP_DIR, HUB_DATA_DIR, load_ips, IP_PATH
-from bairy.device import configs as device_configs
-from bairy.device.dash_app import resample_df
+from bairy.device import configs as device_configs, preprocess
 
 
 def load_data(only_last_day: bool):
@@ -48,7 +47,7 @@ def load_data(only_last_day: bool):
   if only_last_day:
     start = pd.Timestamp.now() - pd.Timedelta('1 day')
     df = df[df.index > start]
-  df = resample_df(df)
+  df = preprocess.resample_df(df)
   return df
 
 
