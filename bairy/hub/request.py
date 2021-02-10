@@ -9,7 +9,7 @@ import asyncio
 import nest_asyncio
 import aiohttp
 from bairy.hub import configs
-from bairy.device import utils, configs as device_configs, app as device_app
+from bairy.device import configs as device_configs, app as device_app
 
 
 nest_asyncio.apply()
@@ -25,7 +25,7 @@ async def get_status(ip_address: str):
   async with aiohttp.ClientSession() as session:
     url = 'http://' + ip_address + ':8000/' + 'status'
     async with session.get(url) as r:
-      d: dict[str, Any] = await r.json()
+      d: dict[str, Any] = await r.json(content_type='text/plain')
       return d
 
 
@@ -54,28 +54,22 @@ async def get_data(ip_address: str):
   try:
     status = await get_status(ip_address)
     name: str = status['device_configs']['name']
-    data_path = os.path.join(configs.HUB_DATA_DIR, name + '.csv')
 
-    if ip_address == 'self':  # making a symlink to data
-      os.symlink(device_configs.DATA_PATH, data_path)
+    for selection in ['day', 'week']:
+      filename = name + '_' + selection + '.csv'
+      data_path = os.path.join(configs.HUB_DATA_DIR, filename)
 
-    url = 'http://' + ip_address + ':8000/data'
+      if ip_address == 'self':  # making a symlink to data
+        if selection == 'day':
+          device_path = device_configs.DATA_DAY_PATH
+        else:
+          device_path = device_configs.DATA_WEEK_PATH
+        os.symlink(device_path, data_path)
 
-    # make a backup copy of existing data
-    backup_path = os.path.join(configs.BACKUP_DIR, name + '.csv')
-    if os.path.exists(data_path):
-      os.rename(data_path, backup_path)
-
-    logging.info('Requesting data from %s', ip_address)
-    await stream_request(url, data_path)
-
-    # comparing the number of rows of the new data with the old data
-    size = utils.count_rows(data_path)
-    if os.path.exists(backup_path):
-      if size < utils.count_rows(backup_path):
-        raise ValueError('New data is missing some of previous data.')
-      os.remove(backup_path)
-    logging.info('Successfully saved data from %s', ip_address)
+      url = 'http://' + ip_address + ':8000/data?selection=' + selection
+      logging.info('Requesting %s data from %s', selection, ip_address)
+      await stream_request(url, data_path)
+      logging.info('Saved data from %s to %s', ip_address, data_path)
 
   except aiohttp.ClientConnectionError as e:
     logging.error('Failed to connect to %s', ip_address)

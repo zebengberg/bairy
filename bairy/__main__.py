@@ -84,9 +84,10 @@ def parse_args(args: list[str]):
 def parse_device_remove(arg: str):
   """Parse --remove flag under device mode."""
   if arg in ['data', 'all']:
-    if os.path.exists(configs.DATA_PATH):
-      os.remove(configs.DATA_PATH)
-      print(f'Removed stored file at {configs.DATA_PATH}')
+    data_files = glob.glob(configs.DEVICE_DATA_DIR + '/*.csv')
+    for f in data_files:
+      os.remove(f)
+      print(f'Removed stored file at {f}')
   if arg in ['logs', 'all']:
     if os.path.exists(configs.LOG_PATH):
       os.remove(configs.LOG_PATH)
@@ -104,8 +105,7 @@ def parse_device_remove(arg: str):
 def parse_hub_remove(arg: str):
   """Parse --remove flag under hub mode."""
   if arg in ['data', 'all']:
-    data_files = glob.glob(hub_configs.HUB_DATA_DIR + '/*.csv') + \
-        glob.glob(hub_configs.BACKUP_DIR + '/*.csv')
+    data_files = glob.glob(hub_configs.HUB_DATA_DIR + '/*.csv')
     for f in data_files:
       os.remove(f)
       print(f'Removed stored file at {f}')

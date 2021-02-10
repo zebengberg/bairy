@@ -46,14 +46,22 @@ def create_fig(time_period: str = 'all'):
       layout_params[yaxis_layout]['overlaying'] = 'y'
 
     for col in cols:
+      # making some traces traces hidden
+      if col in ['random3', 'pm_1.0', 'motion', 'sound']:
+        visible = 'legendonly'
+      else:
+        visible = None
+
       fig.add_trace(go.Scatter(
           x=df['time'],
           y=df[col],
           name=col,
           opacity=opacity,
           line={'color': next(colors)},
-          yaxis=yaxis
+          yaxis=yaxis,
+          visible=visible
       ))
+
     fig.update_layout(**layout_params)
 
   # threshold for pm2.5
@@ -110,11 +118,10 @@ plot.layout = html.Div(children=[
     dcc.Graph(id='plot_all'),
 
     # for plot update callback
-    # see https://dash.plotly.com/live-updates
+    # see https: // dash.plotly.com/live-updates
     dcc.Interval(
         id='interval-component',
-        interval=60 * 1000,  # in milliseconds
-        n_intervals=0  # an unused counter
+        interval=5 * 60 * 1000,  # 5 minutes
     )
 ])
 

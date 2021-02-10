@@ -2,6 +2,7 @@
 
 
 from __future__ import annotations
+from typing import Optional
 import os
 import json
 import subprocess
@@ -27,10 +28,18 @@ def root():
 
 
 @app.get('/data')
-def data():
+def data(selection: str = 'raw'):
   """Return streaming response of CSV containing all data."""
+  selections = {'raw': configs.DATA_PATH,
+                'day': configs.DATA_DAY_PATH,
+                'week': configs.DATA_WEEK_PATH,
+                'all': configs.DATA_ALL_PATH}
+
+  if selection not in selections:
+    return 'unknown command'
+
   # cannot use with ... here
-  f = open(configs.DATA_PATH, 'rb')
+  f = open(selections[selection], 'rb')
   return responses.StreamingResponse(f, media_type='text/csv')
 
 
