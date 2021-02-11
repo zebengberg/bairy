@@ -49,7 +49,7 @@ When `bairy` is initialized, several distinct processes start. Through an asynch
 The app includes various endpoints, described below. To navigate to the endpoint `/logs`, point your browser to `localhost:8000/logs`.
 
 - `/docs` Shows endpoint schemas and API documentation.
-- `/data` Returns a streaming response of the `data.csv` file.
+- `/data` Returns a streaming response of the `data.csv` file. Optional `selection` argument can be used to access preprocessed data.
 - `/logs` Returns the `bairy` logs as plaintext.
 - `/status` Displays a json object showing active configurations and device status. See the json example below.
 - `/remote/update` Update the `bairy` software with `pip`. Requires the Raspberry Pi does not prompt for `sudo` password, which is the default setting.

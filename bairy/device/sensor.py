@@ -82,9 +82,9 @@ class Sensor:
   def read_random(self):
     """Create random data for testing device."""
     if self.prev_reading is None:
-      r = random.randint(0, 255)
+      r = random.randint(0, 50)
     else:
-      r = self.prev_reading + random.randint(-3, 3)
-      r = max(min(r, 255), 0)  # clipping
+      r = self.prev_reading + random.randint(-1, 1)
+      r = max(min(r, 50), 0)  # clipping
     self.prev_reading = r
     return {self.header: r}

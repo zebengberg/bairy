@@ -65,6 +65,7 @@ def create_fig(time_period: str):
 
   fig.update_layout(height=800, title=title)
   fig.layout.xaxis.rangeslider.visible = True
+  fig.layout.yaxis.fixedrange = False
   fig.layout.yaxis.title = 'micrograms / cubic meter'
   return fig
 
